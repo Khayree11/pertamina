@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jbmono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Warna merek netral (teal-biru industri) — bukan identitas visual pihak lain. */
+  --color-brand-50: #eef8fb;
+  --color-brand-100: #d5eef5;
+  --color-brand-200: #aedfeb;
+  --color-brand-300: #7cc9dd;
+  --color-brand-400: #44aac6;
+  --color-brand-500: #238dab;
+  --color-brand-600: #17718e;
+  --color-brand-700: #145b73;
+  --color-brand-800: #144b5f;
+  --color-brand-900: #133f50;
+  --color-brand-950: #0a2836;
+
+  --color-ink-800: #12303f;
+  --color-ink-900: #0b1f2a;
+  --color-ink-950: #06141c;
+
+  --animate-pop: pop 180ms ease-out;
+  --animate-fade-in: fade-in 200ms ease-out;
+  --animate-slide-up: slide-up 220ms ease-out;
+
+  @keyframes pop {
+    0% { transform: scale(0.96); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes slide-up {
+    0% { transform: translateY(8px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-900);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background-color: var(--color-brand-200);
+  }
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate-300) transparent;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

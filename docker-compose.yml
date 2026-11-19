@@ -1,0 +1,57 @@
+# HBAC — PostgreSQL + FastAPI + Next.js
+#   docker compose up --build      lalu buka http://localhost:3000
+# Variabel opsional di file .env (folder ini): POSTGRES_PASSWORD, JWT_SECRET, GEMINI_API_KEY, WHATSAPP_*
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hbac
+      POSTGRES_USER: hbac
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hbac-dev-password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hbac -d hbac"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://hbac:${POSTGRES_PASSWORD:-hbac-dev-password}@db:5432/hbac
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-before-any-deployment}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      CORS_ORIGINS: http://localhost:3000
+      DEMO_MODE: ${DEMO_MODE:-true}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_TEMPLATE_NAME: ${WHATSAPP_TEMPLATE_NAME:-}
+      WHATSAPP_GATEWAY_URL: ${WHATSAPP_GATEWAY_URL:-}
+      WHATSAPP_GATEWAY_TOKEN: ${WHATSAPP_GATEWAY_TOKEN:-}
+    volumes:
+      - hbacdata:/app/data
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_URL: http://backend:8000
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  hbacdata:

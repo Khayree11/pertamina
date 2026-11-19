@@ -1,0 +1,22 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+backend/data/
+backend/.env
+.pytest_cache/
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/next-env.d.ts
+frontend/tsconfig.tsbuildinfo
+
+# Lainnya
+.env
+*.db
+*.db-wal
+*.db-shm
+.env.prod
+.caddy/
+hbac-deploy.tar.gz

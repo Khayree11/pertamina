@@ -1,0 +1,243 @@
+{
+  "label": "SIMULASI v1 — aturan ilustratif (DUMMY)",
+  "disclaimer": "Ambang batas dan aturan ini adalah CONTOH SIMULASI untuk prototipe. Versi produksi wajib ditetapkan/divalidasi dokter perusahaan dan pemilik kebijakan K3; sistem hanya mengeksekusi aturan yang mereka setujui.",
+  "special_areas": ["COLD", "HOT", "HEIGHT", "RESTRICTED_GAS"],
+  "settings": {
+    "mcu_validity_days": 365,
+    "bp_inconsistency_systolic_delta": 30,
+    "bp_inconsistency_diastolic_delta": 20,
+    "override_max_hours": 12,
+    "override_default_hours": 4,
+    "override_hard_stop_reasons": ["BP_VERY_HIGH", "MCU_UNFIT"],
+    "restricted_entry_max_minutes": 120
+  },
+  "comorbidity_catalog": [
+    {"code": "HYPERTENSION", "label": "Hipertensi"},
+    {"code": "DIABETES", "label": "Diabetes melitus"},
+    {"code": "ASTHMA_COPD", "label": "Asma / PPOK"},
+    {"code": "HEART_DISEASE", "label": "Penyakit jantung"},
+    {"code": "EPILEPSY", "label": "Epilepsi / riwayat kejang"},
+    {"code": "OTHER", "label": "Lainnya (sebutkan)"}
+  ],
+  "reason_catalog": {
+    "BP_NOT_SUBMITTED": {
+      "short": "Tensi hari ini belum diinput",
+      "detail": "Screening tensi harian wajib dilakukan sebelum masuk area khusus. Hanya akses umum yang aktif."
+    },
+    "BP_HIGH": {
+      "short": "Tensi hari ini di atas ambang untuk area ini",
+      "detail": "Sistolik >= 140 atau diastolik >= 90 mmHg (ambang simulasi)."
+    },
+    "BP_VERY_HIGH": {
+      "short": "Tensi hari ini sangat tinggi — segera temui petugas kesehatan",
+      "detail": "Sistolik >= 180 atau diastolik >= 110 mmHg (ambang simulasi). Flag review segera."
+    },
+    "BP_INCONSISTENT": {
+      "short": "Hasil tensi hari ini tidak konsisten — perlu review",
+      "detail": "Selisih antar-pengukuran hari ini melebihi batas (sistolik > 30 atau diastolik > 20 mmHg)."
+    },
+    "MCU_MISSING": {
+      "short": "Data MCU tahunan belum ada",
+      "detail": "Tidak ada MCU tahunan yang tercatat (default aman)."
+    },
+    "MCU_EXPIRED": {
+      "short": "MCU tahunan kedaluwarsa",
+      "detail": "MCU terakhir berumur lebih dari 12 bulan."
+    },
+    "MCU_UNVERIFIED": {
+      "short": "Data MCU menunggu verifikasi",
+      "detail": "MCU diinput mandiri dan belum diverifikasi admin (celah 2 role, lihat §8.2)."
+    },
+    "MCU_UNFIT": {
+      "short": "Kesimpulan MCU: tidak fit untuk area khusus",
+      "detail": "Kesimpulan dokter pada MCU terakhir: UNFIT."
+    },
+    "MCU_RESTRICTION": {
+      "short": "Akses terbatas sesuai restriksi dokter",
+      "detail": "Kesimpulan MCU: fit dengan restriksi untuk area ini."
+    },
+    "COMORBID_HEART": {
+      "short": "Perlu review kesehatan untuk area ini",
+      "detail": "Komorbid penyakit jantung aktif."
+    },
+    "COMORBID_RESPIRATORY": {
+      "short": "Perlu review kesehatan untuk area ini",
+      "detail": "Komorbid asma/PPOK aktif."
+    },
+    "COMORBID_HTN_UNCONTROLLED": {
+      "short": "Perlu review kesehatan untuk area ini",
+      "detail": "Hipertensi tidak terkontrol, atau status terkontrol belum diverifikasi."
+    },
+    "COMORBID_DM_UNCONTROLLED": {
+      "short": "Perlu review kesehatan untuk area ini",
+      "detail": "Diabetes tidak terkontrol, atau status terkontrol belum diverifikasi."
+    },
+    "COMORBID_EPILEPSY": {
+      "short": "Perlu review kesehatan untuk area ini",
+      "detail": "Riwayat epilepsi/kejang aktif."
+    },
+    "COMORBID_OTHER_UNCLASSIFIED": {
+      "short": "Data kesehatan perlu diklasifikasi admin",
+      "detail": "Komorbid 'lainnya' belum diverifikasi sehingga dampaknya belum dapat dinilai."
+    }
+  },
+  "rules": [
+    {
+      "id": "R01",
+      "name": "Tensi hari ini belum diinput",
+      "origin": "Dokumen §5",
+      "when": {"fact": "bp.submitted_today", "op": "is_false"},
+      "effects": {"ALL_SPECIAL": "DENIED"},
+      "reason": "BP_NOT_SUBMITTED"
+    },
+    {
+      "id": "R02",
+      "name": "Tensi tinggi (>= 140/90)",
+      "origin": "Dokumen §5",
+      "when": {
+        "all": [
+          {"fact": "bp.submitted_today", "op": "is_true"},
+          {"any": [
+            {"fact": "bp.systolic", "op": ">=", "value": 140},
+            {"fact": "bp.diastolic", "op": ">=", "value": 90}
+          ]}
+        ]
+      },
+      "effects": {"HEIGHT": "DENIED", "HOT": "DENIED", "OTHERS": "NEEDS_REVIEW"},
+      "reason": "BP_HIGH"
+    },
+    {
+      "id": "R03",
+      "name": "Tensi sangat tinggi (>= 180/110)",
+      "origin": "Dokumen §5",
+      "when": {
+        "all": [
+          {"fact": "bp.submitted_today", "op": "is_true"},
+          {"any": [
+            {"fact": "bp.systolic", "op": ">=", "value": 180},
+            {"fact": "bp.diastolic", "op": ">=", "value": 110}
+          ]}
+        ]
+      },
+      "effects": {"ALL_SPECIAL": "DENIED"},
+      "flags": ["URGENT_REVIEW"],
+      "reason": "BP_VERY_HIGH"
+    },
+    {
+      "id": "R04",
+      "name": "Komorbid jantung aktif",
+      "origin": "Dokumen §5",
+      "when": {"fact": "comorbid.active", "op": "contains", "value": "HEART_DISEASE"},
+      "effects": {"HOT": "NEEDS_REVIEW", "HEIGHT": "NEEDS_REVIEW", "RESTRICTED_GAS": "NEEDS_REVIEW"},
+      "reason": "COMORBID_HEART"
+    },
+    {
+      "id": "R05",
+      "name": "Komorbid asma/PPOK aktif",
+      "origin": "Dokumen §5",
+      "when": {"fact": "comorbid.active", "op": "contains", "value": "ASTHMA_COPD"},
+      "effects": {"RESTRICTED_GAS": "NEEDS_REVIEW"},
+      "reason": "COMORBID_RESPIRATORY"
+    },
+    {
+      "id": "R06",
+      "name": "MCU tahunan kedaluwarsa (> 12 bulan)",
+      "origin": "Dokumen §5",
+      "when": {
+        "all": [
+          {"fact": "mcu.exists", "op": "is_true"},
+          {"fact": "mcu.expired", "op": "is_true"}
+        ]
+      },
+      "effects": {"ALL_SPECIAL": "NEEDS_REVIEW"},
+      "reason": "MCU_EXPIRED"
+    },
+    {
+      "id": "R07",
+      "name": "Belum ada data MCU",
+      "origin": "Tambahan prototipe — default aman (§5 baris konflik/ketidakpastian)",
+      "when": {"fact": "mcu.exists", "op": "is_false"},
+      "effects": {"ALL_SPECIAL": "NEEDS_REVIEW"},
+      "reason": "MCU_MISSING"
+    },
+    {
+      "id": "R08",
+      "name": "Pengukuran tensi hari ini tidak konsisten",
+      "origin": "Tambahan prototipe — konflik data (§5)",
+      "when": {"fact": "bp.inconsistent_today", "op": "is_true"},
+      "effects": {"ALL_SPECIAL": "NEEDS_REVIEW"},
+      "reason": "BP_INCONSISTENT"
+    },
+    {
+      "id": "R09",
+      "name": "MCU belum diverifikasi",
+      "origin": "Tambahan prototipe — celah 2 role (§8.2)",
+      "when": {
+        "all": [
+          {"fact": "mcu.exists", "op": "is_true"},
+          {"fact": "mcu.verified", "op": "is_false"}
+        ]
+      },
+      "effects": {"ALL_SPECIAL": "NEEDS_REVIEW"},
+      "reason": "MCU_UNVERIFIED"
+    },
+    {
+      "id": "R10",
+      "name": "Kesimpulan MCU: UNFIT",
+      "origin": "Tambahan prototipe — kesimpulan dokter (§4 input MCU)",
+      "when": {
+        "all": [
+          {"fact": "mcu.exists", "op": "is_true"},
+          {"fact": "mcu.conclusion", "op": "==", "value": "UNFIT"}
+        ]
+      },
+      "effects": {"ALL_SPECIAL": "DENIED"},
+      "reason": "MCU_UNFIT"
+    },
+    {
+      "id": "R11",
+      "name": "Restriksi dokter pada MCU",
+      "origin": "Tambahan prototipe — kesimpulan fit/restriksi (§4 input MCU)",
+      "when": {
+        "all": [
+          {"fact": "mcu.exists", "op": "is_true"},
+          {"fact": "mcu.conclusion", "op": "==", "value": "FIT_WITH_RESTRICTION"}
+        ]
+      },
+      "effects_from_fact": {"fact": "mcu.restricted_areas", "status": "RESTRICTED"},
+      "reason": "MCU_RESTRICTION"
+    },
+    {
+      "id": "R12",
+      "name": "Hipertensi tidak terkontrol",
+      "origin": "Tambahan ilustratif — status terkontrol (§4 input komorbid)",
+      "when": {"fact": "comorbid.uncontrolled", "op": "contains", "value": "HYPERTENSION"},
+      "effects": {"HEIGHT": "NEEDS_REVIEW", "HOT": "NEEDS_REVIEW"},
+      "reason": "COMORBID_HTN_UNCONTROLLED"
+    },
+    {
+      "id": "R13",
+      "name": "Diabetes tidak terkontrol",
+      "origin": "Tambahan ilustratif — status terkontrol (§4 input komorbid)",
+      "when": {"fact": "comorbid.uncontrolled", "op": "contains", "value": "DIABETES"},
+      "effects": {"HEIGHT": "NEEDS_REVIEW", "HOT": "NEEDS_REVIEW"},
+      "reason": "COMORBID_DM_UNCONTROLLED"
+    },
+    {
+      "id": "R14",
+      "name": "Riwayat epilepsi/kejang",
+      "origin": "Tambahan ilustratif — risiko pingsan/jatuh (§1)",
+      "when": {"fact": "comorbid.active", "op": "contains", "value": "EPILEPSY"},
+      "effects": {"HEIGHT": "NEEDS_REVIEW"},
+      "reason": "COMORBID_EPILEPSY"
+    },
+    {
+      "id": "R15",
+      "name": "Komorbid lain belum diklasifikasi",
+      "origin": "Tambahan prototipe — ketidakpastian data (§5)",
+      "when": {"fact": "comorbid.unverified", "op": "contains", "value": "OTHER"},
+      "effects": {"ALL_SPECIAL": "NEEDS_REVIEW"},
+      "reason": "COMORBID_OTHER_UNCLASSIFIED"
+    }
+  ]
+}

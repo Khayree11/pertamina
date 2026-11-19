@@ -1,0 +1,16 @@
+# SITE_ADDRESS = domain (mis. hbac.webelong.id -> HTTPS otomatis dari Let's Encrypt) atau ":80" bila hanya pakai IP.
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	# Password situs (basic auth) & aturan tambahan lain — opsional, dibuat oleh deploy/install.sh di folder .caddy/
+	import /etc/caddy/conf.d/*.caddy
+
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	reverse_proxy frontend:3000
+}
