@@ -142,8 +142,9 @@ def demo_login(body: DemoLoginIn, response: Response, db: Session = Depends(get_
     from ..seed import DEMO_USERNAMES  # impor lokal untuk menghindari siklus
 
     username = body.username.strip().lower()
-    user = db.scalars(select(User).where(User.username == username)).first() if username in DEMO_USERNAMES else None
-    if user is None or not user.is_active:
+    user = db.scalars(select(User).where(User.username == username)).first()
+    allowed = user is not None and (username in DEMO_USERNAMES or _is_self_registered_worker(db, user))
+    if not allowed or not user.is_active:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Akun demo tidak ditemukan")
     user.last_login_at = utcnow()
     write_audit(db, user, "LOGIN", "user", user.id, user.employee_id, {"method": "demo"})
@@ -158,22 +159,52 @@ def demo_accounts(db: Session = Depends(get_db)):
         return {"enabled": False, "accounts": []}
     from ..seed import DEMO_SCENARIOS, DEMO_USERNAMES  # impor lokal untuk menghindari siklus
 
-    users = db.scalars(
-        select(User).where(User.is_active.is_(True), User.username.in_(DEMO_USERNAMES)).order_by(User.role, User.id)
-    ).all()
+    users = list(
+        db.scalars(
+            select(User).where(User.is_active.is_(True), User.username.in_(DEMO_USERNAMES)).order_by(User.role, User.id)
+        )
+    )
+    if get_settings().demo_list_registered:
+        # Akun pekerja hasil registrasi, terbaru di atas.
+        users += db.scalars(
+            select(User)
+            .join(Employee, Employee.id == User.employee_id)
+            .where(
+                User.is_active.is_(True),
+                User.role == ROLE_WORKER,
+                Employee.registration_source == "SELF",
+                User.username.not_in(DEMO_USERNAMES),
+            )
+            .order_by(User.id.desc())
+        ).all()
     out = []
     for u in users:
         emp = db.get(Employee, u.employee_id) if u.employee_id else None
+        registered = u.username not in DEMO_USERNAMES
+        scenario = (
+            f"Akun hasil registrasi · {emp.unit}" if registered and emp and emp.unit else
+            "Akun hasil registrasi" if registered else
+            DEMO_SCENARIOS.get(emp.employee_code if emp else u.username, {}).get("label", "")
+        )
         out.append(
             {
                 "username": u.username,
                 "full_name": u.full_name,
                 "role": u.role,
                 "employee_code": emp.employee_code if emp else None,
-                "scenario": DEMO_SCENARIOS.get(emp.employee_code if emp else u.username, {}).get("label", ""),
+                "scenario": scenario,
+                "registered": registered,
             }
         )
     return {"enabled": True, "accounts": out}
+
+
+def _is_self_registered_worker(db: Session, user: User) -> bool:
+    """Pekerja yang mendaftar sendiri — boleh dibuka satu klik hanya bila DEMO_LIST_REGISTERED aktif."""
+    if not get_settings().demo_list_registered or user.role != ROLE_WORKER or not user.employee_id:
+        return False
+    emp = db.get(Employee, user.employee_id)
+    return emp is not None and emp.registration_source == "SELF"
 
 
 @router.post("/logout")

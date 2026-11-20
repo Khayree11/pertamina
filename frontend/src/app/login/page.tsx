@@ -11,7 +11,14 @@ import { errorMessage } from "@/lib/api";
 import { homeFor, useAuth } from "@/lib/auth";
 import { initials } from "@/lib/format";
 
-type DemoAccount = { username: string; full_name: string; role: string; employee_code: string | null; scenario: string };
+type DemoAccount = {
+  username: string;
+  full_name: string;
+  role: string;
+  employee_code: string | null;
+  scenario: string;
+  registered?: boolean;
+};
 
 const POINTS: [string, string][] = [
   ["Screening harian", "Tensi diinput setiap hari sebelum mulai bekerja."],
@@ -63,7 +70,8 @@ export default function LoginPage() {
   const admins = accounts.filter((a) => a.role === "ADMIN");
   const healthAccounts = accounts.filter((a) => a.role === "HEALTH");
   const securityAccounts = accounts.filter((a) => a.role === "SECURITY");
-  const workers = accounts.filter((a) => a.role === "WORKER");
+  const workers = accounts.filter((a) => a.role === "WORKER" && !a.registered);
+  const registered = accounts.filter((a) => a.registered);
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
@@ -126,7 +134,9 @@ export default function LoginPage() {
           {demo?.enabled && (
             <div className="mt-10 border-t border-slate-200 pt-6">
               <p className="text-sm font-semibold text-slate-900">Akun demo</p>
-              <p className="mt-0.5 text-xs text-slate-500">Masuk dengan satu klik ke akun contoh berdata fiktif.</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Masuk dengan satu klik tanpa password{registered.length > 0 ? ", termasuk akun yang baru didaftarkan" : " ke akun contoh berdata fiktif"}.
+              </p>
               <div className="mt-4 space-y-2">
                 {admins.map((a) => (
                   <DemoRow key={a.username} acc={a} busy={busy} onClick={() => quick(a)} admin />
@@ -138,6 +148,17 @@ export default function LoginPage() {
                   <DemoRow key={a.username} acc={a} busy={busy} onClick={() => quick(a)} admin />
                 ))}
               </div>
+              {registered.length > 0 && (
+                <div className="mt-5">
+                  <p className="text-xs font-medium text-slate-500">Akun hasil registrasi ({registered.length})</p>
+                  <div className="scrollbar-thin mt-2 max-h-[200px] space-y-2 overflow-y-auto pr-1">
+                    {registered.map((a) => (
+                      <DemoRow key={a.username} acc={a} busy={busy} onClick={() => quick(a)} />
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs font-medium text-slate-500">Akun contoh</p>
+                </div>
+              )}
               <div className="scrollbar-thin mt-2 max-h-[340px] space-y-2 overflow-y-auto pr-1">
                 {workers.map((a) => (
                   <DemoRow key={a.username} acc={a} busy={busy} onClick={() => quick(a)} />

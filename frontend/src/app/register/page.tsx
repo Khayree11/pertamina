@@ -8,11 +8,13 @@ import { BrandLockup } from "@/components/brand";
 import { Alert, Button, Card, Checkbox, Field, Input, Select } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { homeFor, useAuth } from "@/lib/auth";
+import { useMeta } from "@/lib/hooks";
 
 const UNIT_OPTIONS = ["MOR I", "MOR II", "MOR III", "MOR IV", "MOR V"] as const;
 
 export default function RegisterPage() {
   const { user, loading, register } = useAuth();
+  const { data: meta } = useMeta();
   const router = useRouter();
   const [f, setF] = useState({ full_name: "", employee_code: "", username: "", unit: "", phone: "", email: "", password: "", confirm: "" });
   const [consent, setConsent] = useState(false);
@@ -67,6 +69,12 @@ export default function RegisterPage() {
           <p className="mt-1 text-sm text-slate-500">
             Setelah mendaftar, Anda akan diminta melengkapi profil: data umum, MCU tahunan (boleh menyusul), dan data komorbid.
           </p>
+          {meta?.demo_list_registered && (
+            <Alert tone="warning" className="mt-4">
+              Mode demo: akun yang Anda daftarkan akan tampil di daftar akun demo dan bisa dibuka siapa pun tanpa password.
+              Gunakan data contoh, jangan data kesehatan atau dokumen MCU asli.
+            </Alert>
+          )}
           <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Nama lengkap" required error={errors.full_name} htmlFor="r-name">

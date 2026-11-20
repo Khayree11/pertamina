@@ -23,15 +23,27 @@ def test_register_validation(client):
     assert client.post("/api/auth/register", json={**NEW, "employee_code": "PTM-1001"}).status_code == 409
 
 
-def test_demo_login_only_for_seeded_accounts(client):
-    """Akun yang didaftarkan orang sungguhan tidak boleh muncul di / bisa dibuka lewat login satu klik."""
+def test_registered_accounts_in_demo_list_toggle(client, monkeypatch):
+    """Akun pekerja hasil registrasi tampil di daftar demo (bawaan), dan hilang bila DEMO_LIST_REGISTERED=false."""
+    from app.config import get_settings
+
     client.cookies.clear()
-    real = {**NEW, "username": "pekerja.asli", "employee_code": "ptm-2099", "phone": "0812 3456 7899", "email": "asli@contoh.id"}
+    real = {**NEW, "username": "pekerja.baru", "employee_code": "ptm-2099", "phone": "0812 3456 7899", "email": "baru@contoh.id"}
     assert client.post("/api/auth/register", json=real).status_code == 200
     client.cookies.clear()
+
+    accounts = {a["username"]: a for a in client.get("/api/auth/demo-accounts").json()["accounts"]}
+    assert accounts["pekerja.baru"]["registered"] is True and accounts["pekerja.baru"]["role"] == "WORKER"
+    assert accounts["pekerja.baru"]["scenario"].startswith("Akun hasil registrasi")
+    assert accounts["budi"]["registered"] is False
+    assert client.get("/api/meta").json()["demo_list_registered"] is True
+    assert client.post("/api/auth/demo-login", json={"username": "pekerja.baru"}).status_code == 200
+    client.cookies.clear()
+
+    monkeypatch.setattr(get_settings(), "demo_list_registered", False)
     names = {a["username"] for a in client.get("/api/auth/demo-accounts").json()["accounts"]}
-    assert {"admin", "budi"} <= names and "pekerja.asli" not in names
-    assert client.post("/api/auth/demo-login", json={"username": "pekerja.asli"}).status_code == 404
+    assert {"admin", "budi"} <= names and "pekerja.baru" not in names
+    assert client.post("/api/auth/demo-login", json={"username": "pekerja.baru"}).status_code == 404
     assert client.post("/api/auth/demo-login", json={"username": "budi"}).status_code == 200
     client.cookies.clear()
 

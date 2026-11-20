@@ -290,6 +290,7 @@ export interface AuditItem {
 export interface Meta {
   app_name: string;
   demo_mode: boolean;
+  demo_list_registered?: boolean;
   today: string;
   areas: AreaMeta[];
   statuses: { code: Status; label: string; severity: number }[];

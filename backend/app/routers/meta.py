@@ -36,6 +36,7 @@ def meta(db: Session = Depends(get_db)):
     return {
         "app_name": s.app_name,
         "demo_mode": s.demo_mode,
+        "demo_list_registered": s.demo_mode and s.demo_list_registered,
         "timezone": s.timezone,
         "today": today_local().isoformat(),
         "areas": [area_meta(a) for a in SPECIAL_AREAS],

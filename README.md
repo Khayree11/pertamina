@@ -122,8 +122,10 @@ Opsional: `.github/workflows/deploy.yml` untuk deploy otomatis setiap push ke Gi
 
 ## Akun demo
 
-Mode demo menampilkan tombol login satu klik di halaman login (hanya untuk akun contoh hasil seed — akun yang didaftarkan
-sendiri tidak pernah bisa dibuka tanpa password). Password lokal semua akun demo: `Hbac-Demo-2026` (bisa diganti lewat
+Mode demo menampilkan tombol login satu klik di halaman login untuk akun contoh hasil seed (admin, kesehatan, keamanan,
+pekerja) dan, secara bawaan, akun **pekerja hasil registrasi** (grup "Akun hasil registrasi", tanpa password — halaman
+registrasi menampilkan peringatan). Matikan dengan `DEMO_LIST_REGISTERED=false` bila ada yang mendaftar dengan data asli;
+akun staf di luar seed tidak pernah bisa dibuka satu klik. Password lokal semua akun demo: `Hbac-Demo-2026` (bisa diganti lewat
 `DEMO_PASSWORD` di `.env`). Admin: `admin`. Pekerja: `budi`, `siti`, `andi`, `dewi`, `rizky`,
 `fajar`, `wulan`, `teguh`, `rina`, `joko`, `yusuf`, `maya` — masing-masing mewakili skenario (lihat halaman login).
 

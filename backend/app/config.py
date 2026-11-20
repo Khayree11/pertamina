@@ -26,6 +26,9 @@ class Settings(BaseSettings):
 
     timezone: str = "Asia/Jakarta"
     demo_mode: bool = True
+    # Mode demo: akun PEKERJA hasil registrasi ikut tampil & bisa dibuka satu klik (tanpa password).
+    # Matikan (false) bila orang sungguhan mendaftar dengan data kesehatan asli.
+    demo_list_registered: bool = True
     seed_on_startup: bool = True
     # Password akun demo hasil seed. Di server publik isi dengan nilai acak (skrip deploy membuatnya otomatis).
     demo_password: str = ""
