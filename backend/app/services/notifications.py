@@ -273,7 +273,7 @@ def send_bp_reminders(db: Session, now: datetime | None = None) -> dict:
             emp,
             "BP_REMINDER",
             f"Halo {_first_name(emp)}, Anda belum menginput tensi harian hari ini. "
-            "Akses area khusus (Dingin, Panas, Ketinggian, Gas/BBM) tidak aktif sampai screening dilakukan. "
+            "Akses area khusus (Dingin, Panas, Ketinggian, Paparan BBM) tidak aktif sampai screening dilakukan. "
             "Silakan input melalui aplikasi HBAC.",
             now=now,
         )

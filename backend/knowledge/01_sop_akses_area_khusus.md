@@ -13,7 +13,7 @@ Terdapat empat kategori area khusus. Akses umum (gerbang, kantor) tidak dibatasi
 - Wilayah Dingin (COLD): contohnya cold room dan area kriogenik terminal LNG. Risiko utama adalah stres suhu dingin dan beban kardiovaskular. Paparan dingin menyempitkan pembuluh darah sehingga dapat menaikkan tekanan darah dan kerja jantung.
 - Area Panas (HOT): contohnya ruang boiler dan area furnace. Risiko utama adalah heat stress, dehidrasi, dan beban kardiovaskular. Lingkungan panas meningkatkan denyut jantung dan kehilangan cairan.
 - Ketinggian (HEIGHT): contohnya platform menara distilasi dan scaffolding tangki. Risiko utama adalah pingsan atau pusing yang berujung jatuh. Hipertensi tidak terkontrol, gula darah rendah, kejang, dan vertigo meningkatkan risiko ini.
-- Area Terbatas Gas/Uap BBM (RESTRICTED_GAS): contohnya tank farm BBM dan rumah pompa (confined space). Risiko utama adalah beban respirasi, paparan uap hidrokarbon, serta beban pada jantung dan paru, terutama saat memakai alat bantu napas.
+- Area Paparan BBM (RESTRICTED_GAS): contohnya tank farm BBM dan rumah pompa (confined space). Risiko utama adalah beban respirasi, paparan uap hidrokarbon/BBM, serta beban pada jantung dan paru, terutama saat memakai alat bantu napas.
 
 ## Syarat masuk area khusus
 
@@ -28,13 +28,13 @@ Sebelum masuk area khusus, pekerja wajib memenuhi tiga hal berikut:
 Ambang berikut adalah contoh simulasi dari dokumen perencanaan:
 
 - Tensi dalam rentang normal, tanpa komorbid relevan, dan MCU berlaku: semua area khusus ALLOWED.
-- Tensi tinggi, yaitu sistolik 140 mmHg atau lebih, atau diastolik 90 mmHg atau lebih: area Ketinggian dan Panas DENIED; area Dingin dan Gas/BBM NEEDS_REVIEW. Alasannya, tekanan darah tinggi meningkatkan risiko pusing/pingsan di ketinggian dan beban jantung di lingkungan panas.
+- Tensi tinggi, yaitu sistolik 140 mmHg atau lebih, atau diastolik 90 mmHg atau lebih: area Ketinggian dan Panas DENIED; area Dingin dan Paparan BBM NEEDS_REVIEW. Alasannya, tekanan darah tinggi meningkatkan risiko pusing/pingsan di ketinggian dan beban jantung di lingkungan panas.
 - Tensi sangat tinggi, yaitu sistolik 180 mmHg atau lebih, atau diastolik 110 mmHg atau lebih: semua area khusus DENIED dan sistem memberi flag review segera. Pekerja diminta segera menemui petugas kesehatan.
 
 ## Pengaruh komorbid (simulasi)
 
-- Penyakit jantung aktif: area Panas, Ketinggian, dan Gas/BBM perlu review.
-- Asma atau PPOK: area Gas/BBM perlu review karena uap dan iritan dapat memicu sesak napas.
+- Penyakit jantung aktif: area Panas, Ketinggian, dan Paparan BBM perlu review.
+- Asma atau PPOK: area Paparan BBM perlu review karena paparan uap dan iritan dapat memicu sesak napas.
 - Hipertensi atau diabetes yang tidak terkontrol: area Ketinggian dan Panas perlu review.
 - Riwayat epilepsi/kejang: area Ketinggian perlu review.
 - Restriksi dari dokter pada hasil MCU: area yang direstriksi berstatus RESTRICTED (akses terbatas dengan batas durasi dan pendampingan).

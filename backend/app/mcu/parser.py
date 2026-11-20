@@ -253,7 +253,7 @@ def suggestions(values: dict) -> list[dict]:
         out.append({"code": "BP", "text": "Tekanan darah saat MCU di atas ambang (hipertensi).",
                     "areas": ["HEIGHT", "HOT"], "comorbid": "HYPERTENSION"})
     if _abnormal(values, "spirometri"):
-        out.append({"code": "SPIRO", "text": "Fungsi paru (spirometri) tidak normal — relevan untuk area gas/uap BBM.",
+        out.append({"code": "SPIRO", "text": "Fungsi paru (spirometri) tidak normal — relevan untuk area paparan BBM.",
                     "areas": ["RESTRICTED_GAS"], "comorbid": None})
     if _abnormal(values, "ekg"):
         out.append({"code": "EKG", "text": "EKG tidak dalam batas normal — perlu evaluasi jantung.",

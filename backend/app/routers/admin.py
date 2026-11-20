@@ -18,13 +18,15 @@ from ..constants import (
     NEEDS_REVIEW,
     OV_ACTIVE,
     REJECTED,
+    ROLE_HEALTH,
+    ROLE_SECURITY,
     ROLE_WORKER,
     SPECIAL_AREAS,
     STATUS_LABELS,
     UNVERIFIED,
 )
 from ..db import WRITE_LOCK, db_label, engine
-from ..deps import CurrentUser, get_db, get_db_nolock, require_admin
+from ..deps import CurrentUser, get_db, get_db_nolock, require_admin, require_health, require_security, require_staff
 from ..models import (
     AccessEvent,
     AccessOverride,
@@ -51,6 +53,7 @@ from ..schemas import (
     CardStatusIn,
     ComorbidityIn,
     ComorbidityUpdateIn,
+    CreateStaffIn,
     OutageIn,
     OverrideIn,
     RevokeIn,
@@ -62,7 +65,7 @@ from ..schemas import (
     WhatsAppSettingsIn,
     WhatsAppTestIn,
 )
-from ..security import mask_phone
+from ..security import hash_password, mask_phone
 from ..schemas import McuConfirmIn
 from ..services import acs, health_records, mcu_intake, notifications, overrides, whatsapp
 from ..services.profile import general_view, onboarding_status
@@ -80,6 +83,7 @@ from ..services.views import (
     comorbidity_view,
     effective_now,
     employee_basic,
+    ftd_view,
     mcu_view,
     notification_view,
     override_view,
@@ -87,7 +91,7 @@ from ..services.views import (
 )
 from ..timeutil import iso, start_of_local_day, today_local, utcnow
 
-router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(require_admin)])
+router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(require_staff)])
 
 
 def _employee(db: Session, eid: int) -> Employee:
@@ -193,6 +197,37 @@ def _employee_rows(db: Session, now: datetime, config: dict) -> list[dict]:
     return rows
 
 
+def _security_employee_row(row: dict) -> dict:
+    """Return only card/access data for Security users."""
+    return {
+        "id": row["id"],
+        "employee_code": row["employee_code"],
+        "full_name": row["full_name"],
+        "position": row["position"],
+        "unit": row["unit"],
+        "work_location": row["work_location"],
+        "card_number": row["card_number"],
+        "card_active": row["card_active"],
+        "areas": row["areas"],
+    }
+
+
+def _security_card_view(cards: list[dict]) -> list[dict]:
+    return [
+        {
+            "area": item["area"],
+            "status": item["status"],
+            "status_label": item["status_label"],
+            "source": item["source"],
+            "valid_from": item["valid_from"],
+            "valid_until": item["valid_until"],
+            "tap_preview": item["tap_preview"],
+            "sync_status": item["sync_status"],
+        }
+        for item in cards
+    ]
+
+
 def run_view(db: Session, run: AssessmentRun) -> dict:
     rv = db.get(RuleVersion, run.rule_version_id)
     cfg = rv.config if rv else {}
@@ -234,7 +269,7 @@ def run_view(db: Session, run: AssessmentRun) -> dict:
 
 
 @router.get("/badge")
-def badge(db: Session = Depends(get_db)):
+def badge(user: CurrentUser = Depends(require_health), db: Session = Depends(get_db)):
     """Hitungan ringan untuk badge navigasi admin."""
     now = utcnow()
     today = today_local(now)
@@ -262,7 +297,7 @@ def badge(db: Session = Depends(get_db)):
 
 
 @router.get("/dashboard")
-def dashboard(db: Session = Depends(get_db)):
+def dashboard(user: CurrentUser = Depends(require_health), db: Session = Depends(get_db)):
     now = utcnow()
     today = today_local(now)
     config = get_active_rules(db).config
@@ -330,6 +365,7 @@ def employees(
     area: str = "",
     status: str = "",
     flag: str = "",
+    user: CurrentUser = Depends(require_staff),
     db: Session = Depends(get_db),
 ):
     now = utcnow()
@@ -358,16 +394,37 @@ def employees(
         if flag == "pending" and not r["pending_verifications"]:
             continue
         out.append(r)
-    return {"items": out, "units": units, "total": len(rows)}
+    if user.role == ROLE_SECURITY:
+        out = [_security_employee_row(r) for r in out]
+    return {"items": out, "units": units, "total": len(out)}
 
 
 @router.get("/employees/{eid}")
-def employee_detail(eid: int, db: Session = Depends(get_db)):
+def employee_detail(eid: int, user_req: CurrentUser = Depends(require_staff), db: Session = Depends(get_db)):
     emp = _employee(db, eid)
     now = utcnow()
     config = get_active_rules(db).config
     user = db.scalars(select(User).where(User.employee_id == emp.id)).first()
     run = db.get(AssessmentRun, emp.latest_run_id) if emp.latest_run_id else None
+
+    # Petugas Keamanan hanya menerima data non-medis (prinsip UU PDP)
+    if user_req.role == ROLE_SECURITY:
+        events = db.scalars(
+            select(AccessEvent).where(AccessEvent.employee_id == emp.id).order_by(AccessEvent.created_at.desc()).limit(20)
+        ).all()
+        security_card = _security_card_view(card_view(db, emp, config, "worker", now))
+        return {
+            "employee": employee_basic(emp),
+            "card": security_card,
+            "bp_history": [],
+            "mcu": [],
+            "comorbidities": [],
+            "overrides": [],
+            "notifications": [],
+            "access_events": [access_event_view(e) for e in events],
+            "audit": [],
+            "settings": {},
+        }
     since = today_local(now) - timedelta(days=29)
     bps = db.scalars(
         select(DailyBPRecord)
@@ -408,6 +465,7 @@ def employee_detail(eid: int, db: Session = Depends(get_db)):
         "account": {"username": user.username, "last_login_at": iso(user.last_login_at)} if user else None,
         "card": card_view(db, emp, config, "admin", now),
         "latest_run": run_view(db, run) if run else None,
+        "fit_to_drive": ftd_view(run),
         "bp_history": [bp_view(b) for b in bps],
         "mcu": [mcu_view(m, config, names, now) for m in mcus],
         "comorbidities": [comorbidity_view(c, config, names) for c in comorbs],
@@ -420,7 +478,7 @@ def employee_detail(eid: int, db: Session = Depends(get_db)):
 
 
 @router.post("/employees/{eid}/bp")
-def officer_bp(eid: int, body: BPIn, admin: CurrentUser = Depends(require_admin), db: Session = Depends(get_db)):
+def officer_bp(eid: int, body: BPIn, admin: CurrentUser = Depends(require_health), db: Session = Depends(get_db)):
     emp = _employee(db, eid)
     rec, run, changes = health_records.submit_bp(
         db, admin, emp, body.systolic, body.diastolic, body.pulse, body.note, "OFFICER"
@@ -496,7 +554,7 @@ def admin_update_comorbidity(
 
 
 @router.post("/mcu/{mid}/verify")
-def verify_mcu(mid: int, body: VerifyIn, admin: CurrentUser = Depends(require_admin), db: Session = Depends(get_db)):
+def verify_mcu(mid: int, body: VerifyIn, admin: CurrentUser = Depends(require_health), db: Session = Depends(get_db)):
     m = db.get(AnnualMCU, mid)
     if m is None:
         raise HTTPException(404, "Data MCU tidak ditemukan")
@@ -509,7 +567,7 @@ def verify_mcu(mid: int, body: VerifyIn, admin: CurrentUser = Depends(require_ad
 
 @router.post("/comorbidities/{cid}/verify")
 def verify_comorbidity(
-    cid: int, body: VerifyIn, admin: CurrentUser = Depends(require_admin), db: Session = Depends(get_db)
+    cid: int, body: VerifyIn, admin: CurrentUser = Depends(require_health), db: Session = Depends(get_db)
 ):
     c = db.get(Comorbidity, cid)
     if c is None:
@@ -567,7 +625,7 @@ def ack_urgent(run_id: str, body: UrgentAckIn, admin: CurrentUser = Depends(requ
 
 
 @router.get("/review-queue")
-def review_queue(db: Session = Depends(get_db)):
+def review_queue(user: CurrentUser = Depends(require_health), db: Session = Depends(get_db)):
     now = utcnow()
     today = today_local(now)
     config = get_active_rules(db).config
@@ -1104,3 +1162,20 @@ def access_events(
     if area:
         stmt = stmt.where(AccessEvent.area_code == area)
     return {"items": [access_event_view(e) for e in db.scalars(stmt)]}
+
+
+@router.post("/staff")
+def create_staff(body: CreateStaffIn, user: CurrentUser = Depends(require_admin), db: Session = Depends(get_db)):
+    if db.scalar(select(User.id).where(User.username == body.username)):
+        raise HTTPException(409, "Username sudah dipakai")
+    new_user = User(
+        username=body.username.strip().lower(),
+        password_hash=hash_password(body.password),
+        role=body.role,
+        full_name=body.full_name.strip(),
+        is_active=True,
+        created_at=utcnow(),
+    )
+    db.add(new_user)
+    db.commit()
+    return {"id": new_user.id, "username": new_user.username, "role": new_user.role, "full_name": new_user.full_name}

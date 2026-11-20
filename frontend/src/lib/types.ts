@@ -1,4 +1,4 @@
-export type Role = "WORKER" | "ADMIN";
+export type Role = "WORKER" | "ADMIN" | "HEALTH" | "SECURITY";
 export type AreaCode = "COLD" | "HOT" | "HEIGHT" | "RESTRICTED_GAS";
 export type Status = "ALLOWED" | "RESTRICTED" | "NEEDS_REVIEW" | "DENIED";
 export type TapResult = "GRANTED" | "TEMPORARY" | "DENIED";
@@ -263,6 +263,13 @@ export interface AssessmentMeta {
   rule_version_label: string;
   flags: string[];
   valid_until: string;
+}
+
+export interface FitToDrive {
+  status: "FIT_TO_DRIVE" | "UNFIT_TO_DRIVE";
+  status_label: string;
+  reasons: { code: string; short: string; detail?: string }[];
+  assessed_at: string | null;
 }
 
 export interface AuditItem {

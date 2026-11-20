@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from .audit import write_audit
 from .config import get_settings
-from .constants import ROLE_ADMIN, ROLE_WORKER, UNVERIFIED, VERIFIED
+from .constants import ROLE_ADMIN, ROLE_HEALTH, ROLE_SECURITY, ROLE_WORKER, UNVERIFIED, VERIFIED
 from .models import AnnualMCU, Comorbidity, DailyBPRecord, Employee, Room, RuleVersion, User
 from .security import hash_password
 from .timeutil import local_at, start_of_local_day, today_local, utcnow
@@ -26,7 +26,7 @@ DEMO_PASSWORD = get_settings().demo_password or "Hbac-Demo-2026"
 
 DEMO_SCENARIOS: dict[str, dict] = {
     "PTM-1001": {"label": "Sehat, MCU valid — BELUM input tensi hari ini (tokoh demo utama)", "today_bp": None},
-    "PTM-1002": {"label": "Asma/PPOK terkontrol → Gas/BBM perlu review", "today_bp": (122, 80, 76)},
+    "PTM-1002": {"label": "Asma/PPOK terkontrol → Paparan BBM perlu review", "today_bp": (122, 80, 76)},
     "PTM-1003": {"label": "Penyakit jantung + tensi tinggi → Panas & Ketinggian ditolak", "today_bp": (146, 92, 84)},
     "PTM-1004": {"label": "MCU kedaluwarsa (> 12 bulan) → semua area perlu review", "today_bp": (118, 78, 72)},
     "PTM-1005": {"label": "Belum input tensi hari ini (tidak patuh)", "today_bp": None},
@@ -38,25 +38,27 @@ DEMO_SCENARIOS: dict[str, dict] = {
     "PTM-1011": {"label": "Belum input tensi hari ini (tidak patuh)", "today_bp": None},
     "PTM-1012": {"label": "Hipertensi terkontrol (terverifikasi), tensi normal", "today_bp": (132, 84, 74)},
     "admin": {"label": "Admin K3 — monitoring, verifikasi, override, aturan"},
+    "klinik": {"label": "Petugas Kesehatan — review antrian MCU & input tensi klinik"},
+    "security": {"label": "Petugas Keamanan — monitoring gerbang & simulasi tap kartu"},
 }
 
 # kode, username, nama, jabatan, unit, lokasi, baseline tensi (sis, dia), tingkat kepatuhan
 EMPLOYEES = [
-    ("PTM-1001", "budi", "Budi Santoso", "Operator Kilang", "Unit Pengolahan (CDU)", "Kilang Unit II", (118, 78), 0.95),
-    ("PTM-1002", "siti", "Siti Rahmawati", "Teknisi Instrumen", "Maintenance", "Workshop Instrumen", (120, 79), 0.9),
-    ("PTM-1003", "andi", "Andi Wijaya", "Supervisor Tank Farm", "Tank Farm & Distribusi", "Tank Farm Utara", (141, 90), 0.85),
-    ("PTM-1004", "dewi", "Dewi Lestari", "Analis Laboratorium", "Laboratorium QC", "Gedung Lab", (116, 76), 0.9),
-    ("PTM-1005", "rizky", "Rizky Pratama", "Operator Boiler", "Utilities", "Area Boiler", (124, 80), 0.6),
-    ("PTM-1006", "fajar", "Fajar Nugroho", "Rigger / Teknisi Ketinggian", "Maintenance", "Menara Distilasi", (125, 81), 0.9),
-    ("PTM-1007", "wulan", "Wulan Sari", "Operator Terminal LNG", "Terminal LNG", "Dermaga LNG", (127, 83), 0.9),
-    ("PTM-1008", "teguh", "Teguh Prasetyo", "Operator Pompa BBM", "Tank Farm & Distribusi", "Rumah Pompa BBM", (158, 99), 0.8),
-    ("PTM-1009", "rina", "Rina Marlina", "Petugas HSE Lapangan", "HSE", "Kantor HSE", (119, 77), 0.9),
-    ("PTM-1010", "joko", "Joko Susilo", "Teknisi Listrik", "Utilities", "Gardu Induk", (115, 75), 0.95),
-    ("PTM-1011", "yusuf", "Yusuf Hidayat", "Operator Kilang", "Unit Pengolahan (CDU)", "Kilang Unit I", (121, 79), 0.55),
-    ("PTM-1012", "maya", "Maya Anggraini", "Teknisi Mekanik", "Maintenance", "Workshop Mekanik", (131, 84), 0.9),
+    ("PTM-1001", "budi", "Budi Santoso", "Operator Kilang", "MOR I", "Kilang Unit II", (118, 78), 0.95),
+    ("PTM-1002", "siti", "Siti Rahmawati", "Teknisi Instrumen", "MOR II", "Workshop Instrumen", (120, 79), 0.9),
+    ("PTM-1003", "andi", "Andi Wijaya", "Supervisor Tank Farm", "MOR III", "Tank Farm Utara", (141, 90), 0.85),
+    ("PTM-1004", "dewi", "Dewi Lestari", "Analis Laboratorium", "MOR IV", "Gedung Lab", (116, 76), 0.9),
+    ("PTM-1005", "rizky", "Rizky Pratama", "Operator Boiler", "MOR V", "Area Boiler", (124, 80), 0.6),
+    ("PTM-1006", "fajar", "Fajar Nugroho", "Rigger / Teknisi Ketinggian", "MOR I", "Menara Distilasi", (125, 81), 0.9),
+    ("PTM-1007", "wulan", "Wulan Sari", "Operator Terminal LNG", "MOR II", "Dermaga LNG", (127, 83), 0.9),
+    ("PTM-1008", "teguh", "Teguh Prasetyo", "Operator Pompa BBM", "MOR III", "Rumah Pompa BBM", (158, 99), 0.8),
+    ("PTM-1009", "rina", "Rina Marlina", "Petugas HSE Lapangan", "MOR IV", "Kantor HSE", (119, 77), 0.9),
+    ("PTM-1010", "joko", "Joko Susilo", "Teknisi Listrik", "MOR V", "Gardu Induk", (115, 75), 0.95),
+    ("PTM-1011", "yusuf", "Yusuf Hidayat", "Operator Kilang", "MOR I", "Kilang Unit I", (121, 79), 0.55),
+    ("PTM-1012", "maya", "Maya Anggraini", "Teknisi Mekanik", "MOR II", "Workshop Mekanik", (131, 84), 0.9),
 ]
 # Hanya akun hasil seed yang boleh dipakai login satu klik — akun yang didaftarkan orang sungguhan tidak pernah.
-DEMO_USERNAMES = frozenset({"admin", *(e[1] for e in EMPLOYEES)})
+DEMO_USERNAMES = frozenset({"admin", "klinik", "security", *(e[1] for e in EMPLOYEES)})
 
 # kode -> list MCU: (hari lalu, kesimpulan, area restriksi, terverifikasi?, ringkasan)
 MCU_SPECS: dict[str, list[tuple]] = {
@@ -95,8 +97,8 @@ ROOMS = [
     ("HOT-02", "Area Furnace Unit CDU", "HOT", "Kilang Unit II", "Contoh area panas"),
     ("HGT-01", "Platform Menara Distilasi", "HEIGHT", "Menara Distilasi", "Contoh area ketinggian"),
     ("HGT-02", "Scaffolding Tangki Timbun", "HEIGHT", "Tank Farm Utara", "Contoh area ketinggian"),
-    ("GAS-01", "Tank Farm BBM", "RESTRICTED_GAS", "Tank Farm Utara", "Contoh area terbatas gas/uap BBM"),
-    ("GAS-02", "Rumah Pompa BBM (confined space)", "RESTRICTED_GAS", "Rumah Pompa BBM", "Contoh area terbatas gas/uap BBM"),
+    ("GAS-01", "Tank Farm BBM", "RESTRICTED_GAS", "Tank Farm Utara", "Contoh area paparan BBM"),
+    ("GAS-02", "Rumah Pompa BBM (confined space)", "RESTRICTED_GAS", "Rumah Pompa BBM", "Contoh area paparan BBM"),
 ]
 
 
@@ -140,6 +142,10 @@ def seed_all(db: Session) -> dict:
 
     admin = User(username="admin", password_hash=pw, role=ROLE_ADMIN, full_name="Nadia Putri (Admin K3)")
     db.add(admin)
+    klinik = User(username="klinik", password_hash=pw, role=ROLE_HEALTH, full_name="Dr. Sari Dewi (Klinik K3)")
+    db.add(klinik)
+    security = User(username="security", password_hash=pw, role=ROLE_SECURITY, full_name="Ahmad Fadil (Security Gate)")
+    db.add(security)
     db.flush()
 
     employees: dict[str, Employee] = {}

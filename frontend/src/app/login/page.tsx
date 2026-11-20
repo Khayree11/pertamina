@@ -16,7 +16,7 @@ type DemoAccount = { username: string; full_name: string; role: string; employee
 const POINTS: [string, string][] = [
   ["Screening harian", "Tensi diinput setiap hari sebelum mulai bekerja."],
   ["Aturan kelayakan", "Aturan tertulis yang dapat diperiksa dan disetujui dokter perusahaan."],
-  ["Area khusus", "Wilayah dingin, area panas, ketinggian, serta gas dan uap BBM."],
+  ["Area khusus", "Wilayah dingin, area panas, ketinggian, serta area paparan BBM."],
   ["Kartu akses", "Hasil tap di pintu selalu mengikuti status terbaru pekerja."],
 ];
 
@@ -61,6 +61,8 @@ export default function LoginPage() {
 
   const accounts = demo?.accounts ?? [];
   const admins = accounts.filter((a) => a.role === "ADMIN");
+  const healthAccounts = accounts.filter((a) => a.role === "HEALTH");
+  const securityAccounts = accounts.filter((a) => a.role === "SECURITY");
   const workers = accounts.filter((a) => a.role === "WORKER");
 
   return (
@@ -129,6 +131,12 @@ export default function LoginPage() {
                 {admins.map((a) => (
                   <DemoRow key={a.username} acc={a} busy={busy} onClick={() => quick(a)} admin />
                 ))}
+                {healthAccounts.map((a) => (
+                  <DemoRow key={a.username} acc={a} busy={busy} onClick={() => quick(a)} admin />
+                ))}
+                {securityAccounts.map((a) => (
+                  <DemoRow key={a.username} acc={a} busy={busy} onClick={() => quick(a)} admin />
+                ))}
               </div>
               <div className="scrollbar-thin mt-2 max-h-[340px] space-y-2 overflow-y-auto pr-1">
                 {workers.map((a) => (
@@ -171,7 +179,9 @@ function DemoRow({ acc, busy, onClick, admin }: { acc: DemoAccount; busy: string
           {acc.full_name}
           {acc.employee_code && <span className="ml-1.5 font-mono text-xs font-medium text-slate-400">{acc.employee_code}</span>}
         </p>
-        <p className="truncate text-xs text-slate-500">{acc.scenario || (admin ? "Admin K3" : "Pekerja")}</p>
+        <p className="truncate text-xs text-slate-500">
+          {acc.scenario || (admin ? (acc.role === "HEALTH" ? "Petugas Kesehatan" : acc.role === "SECURITY" ? "Petugas Keamanan" : "Admin K3") : "Pekerja")}
+        </p>
       </div>
       {busy === acc.username ? (
         <Spinner className="size-4" />

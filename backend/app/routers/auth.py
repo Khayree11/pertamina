@@ -77,6 +77,7 @@ def register(body: RegisterIn, request: Request, response: Response, db: Session
     emp = Employee(
         employee_code=body.employee_code,
         full_name=body.full_name,
+        unit=body.unit,
         phone=body.phone,
         card_number=next_card_number(db),
         card_active=True,

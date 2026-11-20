@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
-from ..constants import AREA_INFO, ROLE_ADMIN, TAP_LABELS
+from ..constants import AREA_INFO, ROLE_ADMIN, ROLE_HEALTH, ROLE_SECURITY, TAP_LABELS
 from ..deps import CurrentUser, get_current_user, get_db
 from ..models import AccessEvent, AcsCard, AcsCardPermission, Employee, Room
 from ..schemas import TapIn
@@ -45,7 +45,7 @@ def _tap_response(db: Session, ev: AccessEvent) -> dict:
 
 @router.post("/api/acs/tap")
 def simulate_tap(body: TapIn, user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    if user.role != ROLE_ADMIN:
+    if user.role not in (ROLE_ADMIN, ROLE_HEALTH, ROLE_SECURITY):
         emp = db.get(Employee, user.employee_id) if user.employee_id else None
         ident = body.identifier.strip().upper()
         if emp is None or ident not in (emp.employee_code.upper(), emp.card_number.upper()):
@@ -60,7 +60,7 @@ def events(
     limit: int = Query(20, ge=1, le=200), user: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     stmt = select(AccessEvent).order_by(AccessEvent.created_at.desc()).limit(limit)
-    if user.role != ROLE_ADMIN:
+    if user.role not in (ROLE_ADMIN, ROLE_HEALTH, ROLE_SECURITY):
         stmt = stmt.where(AccessEvent.employee_id == user.employee_id)
     return {"items": [access_event_view(e) for e in db.scalars(stmt)]}
 

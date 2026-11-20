@@ -33,7 +33,7 @@ const EMPTY: Form = {
   emergency_contact_phone: "",
 };
 
-const UNITS = ["Unit Pengolahan (CDU)", "Maintenance", "Tank Farm & Distribusi", "Laboratorium QC", "Utilities", "Terminal LNG", "HSE"];
+const UNIT_OPTIONS = ["MOR I", "MOR II", "MOR III", "MOR IV", "MOR V"] as const;
 
 /** Form data umum pekerja (dipakai di wizard lengkapi profil & halaman profil). */
 export function GeneralProfileForm({
@@ -95,12 +95,14 @@ export function GeneralProfileForm({
           <Input id="g-pos" value={f.position} onChange={set("position")} maxLength={128} placeholder="Mis. Operator Kilang" />
         </Field>
         <Field label="Unit / departemen" required error={errors.unit} htmlFor="g-unit">
-          <Input id="g-unit" list="units" value={f.unit} onChange={set("unit")} maxLength={128} />
-          <datalist id="units">
-            {UNITS.map((u) => (
-              <option key={u} value={u} />
+          <Select id="g-unit" value={f.unit} onChange={set("unit")}>
+            <option value="">— Pilih Unit —</option>
+            {UNIT_OPTIONS.map((u) => (
+              <option key={u} value={u}>
+                {u}
+              </option>
             ))}
-          </datalist>
+          </Select>
         </Field>
         <Field label="Lokasi kerja" required error={errors.work_location} htmlFor="g-loc">
           <Input id="g-loc" value={f.work_location} onChange={set("work_location")} maxLength={128} placeholder="Mis. Kilang Unit II" />

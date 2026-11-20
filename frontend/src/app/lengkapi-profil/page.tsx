@@ -181,7 +181,7 @@ export default function LengkapiProfilPage() {
               ) : (
                 <div className="mt-5 space-y-5">
                   <Alert tone="warning" title="Jika MCU menyusul">
-                    Akses area khusus (Dingin, Panas, Ketinggian, Gas/BBM) berstatus NEEDS_REVIEW sampai MCU diunggah dan diverifikasi.
+                    Akses area khusus (Dingin, Panas, Ketinggian, Paparan BBM) berstatus NEEDS_REVIEW sampai MCU diunggah dan diverifikasi.
                     Pengingat akan tampil di Beranda.
                   </Alert>
                   <McuSmartUpload

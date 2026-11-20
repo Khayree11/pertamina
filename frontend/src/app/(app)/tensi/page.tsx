@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { BpChart } from "@/components/charts";
-import { StatusBadge } from "@/components/status";
+import { FitToDriveBadge, StatusBadge } from "@/components/status";
 import { useToast } from "@/components/toast";
 import {
   Alert,
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui";
 import { ApiError, api } from "@/lib/api";
 import { fmtDate, fmtTime } from "@/lib/format";
-import type { BPRecord, CardArea, Status } from "@/lib/types";
+import type { BPRecord, CardArea, FitToDrive, Status } from "@/lib/types";
 
 type History = {
   records: BPRecord[];
@@ -46,6 +46,7 @@ type SubmitResult = {
   record: BPRecord;
   card: CardArea[];
   changes: { area: string; old_status: Status | null; new_status: Status; note?: string }[];
+  fit_to_drive?: FitToDrive | null;
 };
 
 const GUIDE = [
@@ -206,6 +207,11 @@ export default function TensiPage() {
                     );
                   })}
                 </ul>
+                {result.fit_to_drive && (
+                  <div className="mt-3">
+                    <FitToDriveBadge ftd={result.fit_to_drive} />
+                  </div>
+                )}
                 <Link href="/kartu" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
                   Lihat detail status kartu <ArrowRight className="size-4" />
                 </Link>

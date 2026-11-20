@@ -10,6 +10,7 @@ export type RegisterData = {
   password: string;
   full_name: string;
   employee_code: string;
+  unit: string;
   phone: string;
   email: string | null;
   consent: boolean;
@@ -30,6 +31,8 @@ const AuthContext = createContext<AuthState | null>(null);
 export function homeFor(user: User | null): string {
   if (!user) return "/login";
   if (user.role === "ADMIN") return "/admin";
+  if (user.role === "HEALTH") return "/health";
+  if (user.role === "SECURITY") return "/security";
   return user.onboarding && !user.onboarding.completed ? "/lengkapi-profil" : "/dashboard";
 }
 

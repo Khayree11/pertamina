@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from ..audit import write_audit
 from ..config import get_settings
-from ..constants import ROLE_ADMIN
+from ..constants import ROLE_ADMIN, ROLE_HEALTH
 from ..deps import CurrentUser, get_current_user, get_db
 from ..models import AnnualMCU
 
@@ -18,13 +18,13 @@ def mcu_document(mid: int, user: CurrentUser = Depends(get_current_user), db: Se
     m = db.get(AnnualMCU, mid)
     if m is None or not m.document_path:
         raise HTTPException(404, "Dokumen tidak ditemukan")
-    if user.role != ROLE_ADMIN and m.employee_id != user.employee_id:
+    if user.role not in (ROLE_ADMIN, ROLE_HEALTH) and m.employee_id != user.employee_id:
         raise HTTPException(403, "Tidak berwenang membuka dokumen ini")
     path = Path(m.document_path).resolve()
     base = get_settings().upload_dir.resolve()
     if base not in path.parents or not path.exists():
         raise HTTPException(404, "Dokumen tidak ditemukan")
-    if user.role == ROLE_ADMIN:
+    if user.role in (ROLE_ADMIN, ROLE_HEALTH):
         # Akses admin ke dokumen medis dicatat (lihat §3: kewenangan admin).
         from ..db import WRITE_LOCK
 

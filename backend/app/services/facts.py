@@ -6,9 +6,52 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..constants import REJECTED, VERIFIED
+from ..constants import FIT_TO_DRIVE, REJECTED, UNFIT_TO_DRIVE, VERIFIED
 from ..models import AnnualMCU, Comorbidity, DailyBPRecord, Employee
 from ..timeutil import today_local
+
+
+def evaluate_fit_to_drive(facts: dict, comorbidities: list, config: dict) -> dict:
+    """Menghitung status kelayakan berkendara dari fakta yang sudah dibangun.
+    Mengembalikan dict: { status, reasons: [str] }
+    """
+    settings = config.get("settings", {})
+    sys_hi = int(settings.get("bp_high_systolic", 140))
+    dia_hi = int(settings.get("bp_high_diastolic", 90))
+    sys_crit = int(settings.get("bp_critical_systolic", 180))
+    dia_crit = int(settings.get("bp_critical_diastolic", 110))
+
+    reasons = []
+
+    # 1. Tensi belum diinput hari ini — langsung UNFIT
+    if not facts.get("bp.submitted_today"):
+        return {"status": UNFIT_TO_DRIVE, "reasons": ["FTD_BP_NOT_SUBMITTED"]}
+
+    # 2. Nilai tensi
+    sys = facts.get("bp.systolic") or 0
+    dia = facts.get("bp.diastolic") or 0
+    if sys >= sys_crit or dia >= dia_crit:
+        reasons.append("FTD_BP_VERY_HIGH")
+    elif sys >= sys_hi or dia >= dia_hi:
+        reasons.append("FTD_BP_HIGH")
+
+    # 3. Status MCU
+    if not facts.get("mcu.exists") or facts.get("mcu.expired"):
+        reasons.append("FTD_MCU_INVALID")
+    elif not facts.get("mcu.verified"):
+        reasons.append("FTD_MCU_INVALID")
+    elif facts.get("mcu.conclusion") == "UNFIT":
+        reasons.append("FTD_MCU_UNFIT")
+
+    # 4. Epilepsi aktif
+    for c in comorbidities:
+        if getattr(c, "condition_code", None) == "EPILEPSY" and getattr(c, "active", False):
+            reasons.append("FTD_EPILEPSY")
+            break
+
+    if reasons:
+        return {"status": UNFIT_TO_DRIVE, "reasons": reasons}
+    return {"status": FIT_TO_DRIVE, "reasons": []}
 
 
 def todays_bp(db: Session, employee_id: int, day: date) -> list[DailyBPRecord]:
