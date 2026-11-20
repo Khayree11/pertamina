@@ -17,7 +17,7 @@ from .db import WRITE_LOCK, Base, SessionLocal, db_label, engine
 from .db_migrate import ensure_columns
 from .models import Employee, User
 from .routers import access, admin, auth, chat, files, me, meta
-from .seed import seed_all
+from .seed import ensure_demo_staff, seed_all
 from .services import DomainError
 from .services.notifications import dispatch_pending
 from .services.scheduler import last_run, run_sweep, scheduler_loop
@@ -57,6 +57,10 @@ async def lifespan(app: FastAPI):
         if settings.seed_on_startup and not db.scalar(select(func.count(User.id))):
             logger.info("Database kosong - mengisi data demo")
             seed_all(db)
+        elif settings.seed_on_startup:
+            # Database lama: lengkapi akun staf demo untuk role yang ditambahkan belakangan (mis. HEALTH, SECURITY).
+            if added := ensure_demo_staff(db):
+                logger.info("Akun staf demo ditambahkan: %s", ", ".join(added))
         _backfill_profiles(db)
         ingest_directory(db, settings.knowledge_dir)
         db.commit()

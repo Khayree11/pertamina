@@ -57,8 +57,32 @@ EMPLOYEES = [
     ("PTM-1011", "yusuf", "Yusuf Hidayat", "Operator Kilang", "MOR I", "Kilang Unit I", (121, 79), 0.55),
     ("PTM-1012", "maya", "Maya Anggraini", "Teknisi Mekanik", "MOR II", "Workshop Mekanik", (131, 84), 0.9),
 ]
+# Akun staf demo: username, role, nama tampilan.
+STAFF_ACCOUNTS = [
+    ("admin", ROLE_ADMIN, "Nadia Putri (Admin K3)"),
+    ("klinik", ROLE_HEALTH, "Dr. Sari Dewi (Klinik K3)"),
+    ("security", ROLE_SECURITY, "Ahmad Fadil (Security Gate)"),
+]
 # Hanya akun hasil seed yang boleh dipakai login satu klik — akun yang didaftarkan orang sungguhan tidak pernah.
-DEMO_USERNAMES = frozenset({"admin", "klinik", "security", *(e[1] for e in EMPLOYEES)})
+DEMO_USERNAMES = frozenset({*(s[0] for s in STAFF_ACCOUNTS), *(e[1] for e in EMPLOYEES)})
+
+
+def ensure_demo_staff(db: Session) -> list[str]:
+    """Tambahkan akun staf demo yang belum ada (mis. role baru) ke database yang sudah pernah di-seed.
+
+    Seed penuh hanya berjalan saat database kosong; fungsi ini membuat database lama ikut punya akun role baru
+    tanpa reset. Akun yang sudah ada tidak diubah. Mengembalikan username yang baru dibuat."""
+    existing = set(db.scalars(select(User.username).where(User.username.in_([s[0] for s in STAFF_ACCOUNTS]))))
+    added = []
+    for username, role, name in STAFF_ACCOUNTS:
+        if username in existing:
+            continue
+        user = User(username=username, password_hash=hash_password(DEMO_PASSWORD), role=role, full_name=name)
+        db.add(user)
+        db.flush()
+        write_audit(db, None, "DEMO_ACCOUNT_CREATED", "user", user.id, None, {"username": username, "role": role})
+        added.append(username)
+    return added
 
 # kode -> list MCU: (hari lalu, kesimpulan, area restriksi, terverifikasi?, ringkasan)
 MCU_SPECS: dict[str, list[tuple]] = {
@@ -140,12 +164,9 @@ def seed_all(db: Session) -> dict:
     for code, name, area, loc, desc in ROOMS:
         db.add(Room(room_code=code, name=name, area_code=area, location=loc, description=desc))
 
-    admin = User(username="admin", password_hash=pw, role=ROLE_ADMIN, full_name="Nadia Putri (Admin K3)")
-    db.add(admin)
-    klinik = User(username="klinik", password_hash=pw, role=ROLE_HEALTH, full_name="Dr. Sari Dewi (Klinik K3)")
-    db.add(klinik)
-    security = User(username="security", password_hash=pw, role=ROLE_SECURITY, full_name="Ahmad Fadil (Security Gate)")
-    db.add(security)
+    staff = {u: User(username=u, password_hash=pw, role=r, full_name=n) for u, r, n in STAFF_ACCOUNTS}
+    db.add_all(staff.values())
+    admin = staff["admin"]
     db.flush()
 
     employees: dict[str, Employee] = {}

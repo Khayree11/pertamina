@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, LogIn, UserCog } from "lucide-react";
+import { ArrowRight, LogIn, ShieldCheck, Stethoscope, UserCog } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -156,7 +156,10 @@ export default function LoginPage() {
   );
 }
 
+const STAFF_ICON: Record<string, typeof UserCog> = { ADMIN: UserCog, HEALTH: Stethoscope, SECURITY: ShieldCheck };
+
 function DemoRow({ acc, busy, onClick, admin }: { acc: DemoAccount; busy: string | null; onClick: () => void; admin?: boolean }) {
+  const StaffIcon = STAFF_ICON[acc.role] ?? UserCog;
   return (
     <button
       onClick={onClick}
@@ -172,7 +175,7 @@ function DemoRow({ acc, busy, onClick, admin }: { acc: DemoAccount; busy: string
           admin ? "bg-ink-900 text-white" : "bg-slate-100 text-slate-700",
         )}
       >
-        {admin ? <UserCog className="size-4" /> : initials(acc.full_name)}
+        {admin ? <StaffIcon className="size-4" /> : initials(acc.full_name)}
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-slate-900">
