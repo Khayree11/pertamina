@@ -25,7 +25,7 @@ Hal umum yang perlu diperhatikan:
 
 ## Asma dan PPOK
 
-Uap BBM, gas, debu, dan udara dingin dapat memicu penyempitan saluran napas pada penderita asma atau PPOK. Risiko meningkat di area terbatas gas/uap BBM dan ruang terbatas (confined space), terutama saat memakai alat bantu napas yang menambah beban pernapasan.
+Uap BBM, gas, debu, dan udara dingin dapat memicu penyempitan saluran napas pada penderita asma atau PPOK. Risiko meningkat di area paparan BBM dan ruang terbatas (confined space), terutama saat memakai alat bantu napas yang menambah beban pernapasan.
 
 Hal umum yang perlu diperhatikan:
 

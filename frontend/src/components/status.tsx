@@ -2,6 +2,7 @@
 
 import {
   Building2,
+  Car,
   Flame,
   Fuel,
   Mountain,
@@ -15,7 +16,7 @@ import {
   Timer,
   type LucideIcon,
 } from "lucide-react";
-import type { Status, TapResult } from "@/lib/types";
+import type { FitToDrive, Status, TapResult } from "@/lib/types";
 import { cn } from "./ui";
 
 export const STATUS_META: Record<
@@ -99,7 +100,7 @@ export const AREA_SHORT: Record<string, string> = {
   COLD: "Dingin",
   HOT: "Panas",
   HEIGHT: "Ketinggian",
-  RESTRICTED_GAS: "Gas/BBM",
+  RESTRICTED_GAS: "Paparan BBM",
   GENERAL: "Umum",
 };
 
@@ -214,5 +215,39 @@ export function VerificationBadge({ status }: { status: "UNVERIFIED" | "VERIFIED
     <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-600/25 ring-inset">
       Menunggu verifikasi
     </span>
+  );
+}
+
+export function FitToDriveBadge({ ftd, className }: { ftd: FitToDrive; className?: string }) {
+  const isFit = ftd.status === "FIT_TO_DRIVE";
+  return (
+    <div
+      className={cn(
+        "rounded-xl border p-4",
+        isFit ? "border-emerald-200 bg-emerald-50/60" : "border-rose-200 bg-rose-50/60",
+        className,
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <Car className={cn("size-5", isFit ? "text-emerald-600" : "text-rose-600")} />
+        <span className={cn("text-sm font-semibold", isFit ? "text-emerald-700" : "text-rose-700")}>
+          {ftd.status_label}
+        </span>
+      </div>
+      {!isFit && ftd.reasons.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {ftd.reasons.map((r) => (
+            <li key={r.code} className="text-xs text-rose-600">
+              • {r.short}
+            </li>
+          ))}
+        </ul>
+      )}
+      {ftd.assessed_at && (
+        <p className="mt-2 text-xs text-slate-400">
+          Dievaluasi: {new Date(ftd.assessed_at).toLocaleString("id-ID")}
+        </p>
+      )}
+    </div>
   );
 }

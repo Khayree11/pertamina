@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from fastapi import Depends, HTTPException, Request, status
 
 from .config import get_settings
-from .constants import ROLE_ADMIN, ROLE_WORKER
+from .constants import ROLE_ADMIN, ROLE_HEALTH, ROLE_SECURITY, ROLE_WORKER
 from .db import WRITE_LOCK, SessionLocal
 from .models import User
 from .security import decode_token
@@ -74,6 +74,24 @@ def get_current_user(request: Request) -> CurrentUser:
 def require_admin(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
     if user.role != ROLE_ADMIN:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Hanya admin yang dapat mengakses fitur ini")
+    return user
+
+
+def require_health(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    if user.role not in (ROLE_HEALTH, ROLE_ADMIN):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Fitur ini hanya untuk petugas kesehatan atau admin K3")
+    return user
+
+
+def require_security(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    if user.role not in (ROLE_SECURITY, ROLE_ADMIN):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Fitur ini hanya untuk petugas keamanan atau admin K3")
+    return user
+
+
+def require_staff(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    if user.role not in (ROLE_ADMIN, ROLE_HEALTH, ROLE_SECURITY):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Fitur ini khusus staf (bukan pekerja)")
     return user
 
 

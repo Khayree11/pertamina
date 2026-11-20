@@ -39,8 +39,8 @@ SYSTEM_INSTRUCTION = """Kamu adalah "Asisten K3 HBAC", asisten percakapan yang r
 
 CAKUPAN — boleh dibahas:
 - Screening kesehatan harian (cara mengukur tensi yang benar, arti hasil secara umum), MCU tahunan, data komorbid & verifikasinya.
-- Akses kartu & area khusus (Dingin, Panas, Ketinggian, Gas/Uap BBM): arti ALLOWED/RESTRICTED/NEEDS_REVIEW/DENIED dan GRANTED/TEMPORARY/DENIED, override admin, privasi data.
-- K3 umum: kerja aman di area panas, dingin, ketinggian, ruang terbatas/uap BBM; hidrasi, istirahat, kelelahan & kerja shift, APD, tanda bahaya, kapan melapor.
+- Akses kartu & area khusus (Dingin, Panas, Ketinggian, Paparan BBM): arti ALLOWED/RESTRICTED/NEEDS_REVIEW/DENIED dan GRANTED/TEMPORARY/DENIED, override admin, privasi data.
+- K3 umum: kerja aman di area panas, dingin, ketinggian, ruang terbatas/paparan BBM; hidrasi, istirahat, kelelahan & kerja shift, APD, tanda bahaya, kapan melapor.
 - Kebiasaan sehat umum yang memengaruhi kesiapan kerja (tidur, minum, makan, aktivitas fisik) — sebatas edukasi umum.
 - Obrolan ringan & sopan santun (salam, terima kasih, perkenalan, menanyakan kabar), lalu tawarkan bantuan seputar topik di atas.
 - Cara memakai aplikasi HBAC (input tensi, MCU, komorbid, status kartu, simulasi tap, notifikasi).
@@ -62,7 +62,7 @@ GAYA: Bahasa Indonesia yang hangat, jelas, dan ringkas (umumnya ≤ 150 kata; bo
 
 CONTOH:
 Pengguna: halo, apa kabar?
-Asisten: Halo! Kabar baik, terima kasih. Saya Asisten K3 HBAC — siap membantu soal screening tensi harian, MCU, status akses area, atau tips kerja aman di area panas, dingin, ketinggian, dan gas/BBM. Ada yang ingin ditanyakan?
+Asisten: Halo! Kabar baik, terima kasih. Saya Asisten K3 HBAC — siap membantu soal screening tensi harian, MCU, status akses area, atau tips kerja aman di area panas, dingin, ketinggian, dan paparan BBM. Ada yang ingin ditanyakan?
 Pengguna: buatkan puisi cinta dong
 Asisten: Maaf, itu di luar cakupan saya sebagai Asisten K3. Saya bisa bantu hal seputar kesehatan & keselamatan kerja — misalnya tips mencegah dehidrasi saat bekerja di area panas. Mau coba?
 Pengguna: obat darah tinggi yang bagus apa ya?
@@ -105,10 +105,10 @@ EMERGENCY_TEXT = (
     "Jangan menunggu jawaban chatbot — keselamatan Anda yang utama."
 )
 LOCAL_REPLIES = {
-    "greeting": "Halo! Saya Asisten K3 HBAC. Saya bisa membantu soal screening tensi harian, MCU tahunan, data komorbid, status akses kartu per area, dan tips kerja aman di area panas, dingin, ketinggian, maupun gas/BBM. Ada yang ingin ditanyakan?",
+    "greeting": "Halo! Saya Asisten K3 HBAC. Saya bisa membantu soal screening tensi harian, MCU tahunan, data komorbid, status akses kartu per area, dan tips kerja aman di area panas, dingin, ketinggian, maupun paparan BBM. Ada yang ingin ditanyakan?",
     "thanks": "Sama-sama! Semoga kerja hari ini aman dan sehat. Kalau ada pertanyaan lain soal screening atau akses area, silakan tanyakan.",
     "identity": "Saya Asisten K3 HBAC — asisten percakapan untuk pekerja. Saya menjelaskan screening tensi harian, MCU, komorbid, status akses kartu per area, dan K3 umum. Saya tidak mendiagnosis, tidak memberi saran obat, dan tidak dapat mengubah hak akses.",
-    "capability": "Saya bisa membantu:\n- Cara mengukur tensi yang benar sebelum input\n- Arti status ALLOWED, RESTRICTED, NEEDS_REVIEW, DENIED dan hasil tap kartu\n- MCU tahunan & verifikasi data komorbid\n- Tips kerja aman di area panas, dingin, ketinggian, dan gas/BBM\n- Privasi data kesehatan Anda",
+    "capability": "Saya bisa membantu:\n- Cara mengukur tensi yang benar sebelum input\n- Arti status ALLOWED, RESTRICTED, NEEDS_REVIEW, DENIED dan hasil tap kartu\n- MCU tahunan & verifikasi data komorbid\n- Tips kerja aman di area panas, dingin, ketinggian, dan paparan BBM\n- Privasi data kesehatan Anda",
     "bye": "Sampai jumpa! Tetap jaga keselamatan kerja, ya.",
     "ack": "Baik. Kalau ada pertanyaan lain soal screening, MCU, atau akses area, silakan tanyakan.",
 }

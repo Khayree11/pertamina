@@ -14,18 +14,19 @@ import {
 import Link from "next/link";
 import useSWR from "swr";
 import { AreaTile, VirtualCard } from "@/components/access";
-import { StatusLegend, VerificationBadge } from "@/components/status";
+import { FitToDriveBadge, StatusLegend, VerificationBadge } from "@/components/status";
 import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, PageLoader } from "@/components/ui";
 import { WhatsAppPhone } from "@/components/whatsapp";
 import { useAuth } from "@/lib/auth";
 import { fmtDate, fmtDateTime, fmtTime } from "@/lib/format";
-import type { AssessmentMeta, BPRecord, CardArea, Comorbidity, EmployeeBasic, MCU, NotificationItem } from "@/lib/types";
+import type { AssessmentMeta, BPRecord, CardArea, Comorbidity, EmployeeBasic, FitToDrive, MCU, NotificationItem } from "@/lib/types";
 
 type Dashboard = {
   employee: EmployeeBasic;
   today: { date: string; bp_submitted: boolean; latest_bp: BPRecord | null; readings_count: number };
   card: CardArea[];
   assessment: AssessmentMeta | null;
+  fit_to_drive?: FitToDrive | null;
   mcu: MCU | null;
   comorbidities: Comorbidity[];
   notifications: NotificationItem[];
@@ -68,6 +69,8 @@ export default function WorkerDashboard() {
           diberi tahu.
         </Alert>
       )}
+
+      {data.fit_to_drive && <FitToDriveBadge ftd={data.fit_to_drive} />}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         {!data.today.bp_submitted ? (

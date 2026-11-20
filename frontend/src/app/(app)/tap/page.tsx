@@ -16,10 +16,10 @@ type Room = { room_code: string; name: string; area: AreaMeta; location: string;
 export default function TapPage() {
   const { user } = useAuth();
   const toast = useToast();
-  const isAdmin = user?.role === "ADMIN";
+  const isStaff = user?.role === "ADMIN" || user?.role === "HEALTH" || user?.role === "SECURITY";
   const { data: rooms } = useSWR<{ items: Room[] }>("/api/acs/rooms");
   const { data: emps } = useSWR<{ items: { id: number; employee_code: string; full_name: string; card_number: string }[] }>(
-    isAdmin ? "/api/admin/employees" : null,
+    isStaff ? "/api/admin/employees" : null,
   );
   const { data: events, mutate: reloadEvents } = useSWR<{ items: AccessEvent[] }>(`/api/acs/events?limit=15`, { refreshInterval: 20_000 });
   const ownCard = user?.employee?.card_number ?? "";
@@ -27,7 +27,7 @@ export default function TapPage() {
   const [room, setRoom] = useState("HGT-01");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<AccessEvent | null>(null);
-  const ident = isAdmin ? identifier : ownCard;
+  const ident = isStaff ? identifier : ownCard;
 
   const grouped = useMemo(() => {
     const g: Record<string, Room[]> = {};
@@ -70,7 +70,7 @@ export default function TapPage() {
         <Card>
           <CardHeader title="1. Kartu & ruangan" icon={<Nfc className="size-5" />} />
           <CardBody className="space-y-5">
-            {isAdmin ? (
+            {isStaff ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Pilih pekerja">
                   <Select value={identifier} onChange={(e) => setIdentifier(e.target.value)}>
@@ -208,7 +208,7 @@ export default function TapPage() {
       </div>
 
       <Card className="mt-6">
-        <CardHeader title="Log tap terbaru" subtitle={isAdmin ? "Semua reader" : "Kartu Anda"} />
+        <CardHeader title="Log tap terbaru" subtitle={isStaff ? "Semua reader" : "Kartu Anda"} />
         {!events?.items.length ? (
           <EmptyState title="Belum ada tap" />
         ) : (
@@ -216,7 +216,7 @@ export default function TapPage() {
             <thead className="bg-slate-50">
               <tr>
                 <th className={th}>Waktu</th>
-                {isAdmin && <th className={th}>Kartu</th>}
+                {isStaff && <th className={th}>Kartu</th>}
                 <th className={th}>Ruangan</th>
                 <th className={th}>Hasil</th>
                 <th className={th}>Keterangan</th>
@@ -227,7 +227,7 @@ export default function TapPage() {
               {events.items.map((e) => (
                 <tr key={e.id}>
                   <td className={cn(td, "tabular whitespace-nowrap")}>{fmtDateTime(e.created_at)}</td>
-                  {isAdmin && <td className={cn(td, "font-mono text-xs")}>{e.employee_code ?? e.input_identifier}</td>}
+                  {isStaff && <td className={cn(td, "font-mono text-xs")}>{e.employee_code ?? e.input_identifier}</td>}
                   <td className={td}>{e.room_name ?? e.room_code}</td>
                   <td className={td}>
                     <TapBadge result={e.result} />

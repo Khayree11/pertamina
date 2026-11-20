@@ -90,6 +90,35 @@ const ADMIN_NAV: NavGroup[] = [
   },
 ];
 
+const HEALTH_NAV: NavGroup[] = [
+  {
+    title: "Pelayanan Medis",
+    items: [
+      { href: "/health", label: "Dashboard Klinik", icon: LayoutDashboard },
+      { href: "/admin/review", label: "Antrian Review MCU", icon: Inbox, badgeKey: "total" },
+      { href: "/admin/pekerja", label: "Daftar Pekerja", icon: Users },
+      { href: "/tap", label: "Simulasi Tap Kartu", icon: ScanLine },
+    ],
+  },
+  {
+    title: "Bantuan",
+    items: [
+      { href: "/asisten", label: "Asisten AI K3", icon: Bot },
+    ],
+  },
+];
+
+const SECURITY_NAV: NavGroup[] = [
+  {
+    title: "Pos Keamanan",
+    items: [
+      { href: "/security", label: "Dashboard Pos", icon: LayoutDashboard },
+      { href: "/admin/pekerja", label: "Daftar Status Kartu", icon: Users },
+      { href: "/tap", label: "Simulasi Tap Kartu", icon: ScanLine },
+    ],
+  },
+];
+
 const WORKER_ONLY = ["/dashboard", "/tensi", "/kartu", "/mcu", "/komorbid", "/notifikasi", "/profil"];
 
 function isActive(pathname: string, href: string) {
@@ -179,7 +208,13 @@ function SidebarContent({
             <div className="min-w-0 flex-1 leading-tight">
               <p className="truncate text-sm font-semibold text-white">{user.full_name}</p>
               <p className="truncate text-[11px] text-slate-400">
-                {user.role === "ADMIN" ? "Admin K3" : `${user.employee?.employee_code} · Pekerja`}
+                {user.role === "ADMIN"
+                  ? "Admin K3"
+                  : user.role === "HEALTH"
+                    ? "Petugas Kesehatan"
+                    : user.role === "SECURITY"
+                      ? "Petugas Keamanan"
+                      : `${user.employee?.employee_code} · Pekerja`}
               </p>
             </div>
             <button
@@ -242,16 +277,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const now = useClock();
+  const isStaff = user?.role === "ADMIN" || user?.role === "HEALTH" || user?.role === "SECURITY";
+  const isHealth = user?.role === "HEALTH";
+  const isSecurity = user?.role === "SECURITY";
   const isAdmin = user?.role === "ADMIN";
-  const groups = isAdmin ? ADMIN_NAV : WORKER_NAV;
-  const { data: badges } = useSWR<Record<string, number>>(isAdmin ? "/api/admin/badge" : null, { refreshInterval: 30_000 });
+  const groups = isAdmin ? ADMIN_NAV : isHealth ? HEALTH_NAV : isSecurity ? SECURITY_NAV : WORKER_NAV;
+  const { data: badges } = useSWR<Record<string, number>>(isAdmin || isHealth ? "/api/admin/badge" : null, { refreshInterval: 30_000 });
 
   // Penjaga peran sederhana di sisi klien (otorisasi sebenarnya tetap di backend).
   useEffect(() => {
     if (!user) return;
-    if (pathname.startsWith("/admin") && user.role !== "ADMIN") router.replace(homeFor(user));
+    if (pathname.startsWith("/admin")) {
+      if (isAdmin) return;
+      if (isHealth && (pathname === "/admin/pekerja" || pathname.startsWith("/admin/pekerja/") || pathname === "/admin/review")) return;
+      if (isSecurity && (pathname === "/admin/pekerja" || pathname.startsWith("/admin/pekerja/"))) return;
+      router.replace(homeFor(user));
+    }
+    if (pathname.startsWith("/health") && !isHealth && !isAdmin) router.replace(homeFor(user));
+    if (pathname.startsWith("/security") && !isSecurity && !isAdmin) router.replace(homeFor(user));
     if (WORKER_ONLY.some((p) => pathname === p || pathname.startsWith(p + "/")) && user.role !== "WORKER") router.replace(homeFor(user));
-  }, [user, pathname, router]);
+  }, [user, pathname, router, isAdmin, isHealth, isSecurity]);
 
   useEffect(() => setOpen(false), [pathname]);
 
@@ -309,15 +354,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main className={cn("mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8", !isAdmin && "pb-24 lg:pb-8")}>{children}</main>
+      <main className={cn("mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8", !isStaff && "pb-24 lg:pb-8")}>{children}</main>
 
-      <footer className={cn("mx-auto max-w-7xl px-4 pb-8 text-xs text-slate-400 sm:px-6 lg:px-8", !isAdmin && "pb-24 lg:pb-8")}>
+      <footer className={cn("mx-auto max-w-7xl px-4 pb-8 text-xs text-slate-400 sm:px-6 lg:px-8", !isStaff && "pb-24 lg:pb-8")}>
         Prototipe tender — sistem ini alat bantu keputusan, <strong className="font-semibold text-slate-500">bukan diagnosis medis</strong>.
         Ambang batas dan aturan adalah contoh simulasi yang wajib divalidasi dokter perusahaan &amp; pemilik kebijakan K3. Semua data
         pekerja fiktif.
       </footer>
 
-      {!isAdmin && user && (
+      {!isStaff && user && (
         <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
           {MOBILE_WORKER_TABS.map((t) => {
             const active = isActive(pathname, t.href);

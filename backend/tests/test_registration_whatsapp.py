@@ -8,6 +8,7 @@ NEW = {
     "password": "Rahasia123",
     "full_name": "Nanda Saputra",
     "employee_code": "ptm-2001",
+    "unit": "MOR I",
     "phone": "0812 3456 7801",
     "email": "nanda@contoh.id",
     "consent": True,
@@ -48,7 +49,7 @@ def test_register_and_onboarding_flow(client):
     general = {
         "full_name": "Nanda Saputra",
         "position": "Operator Kilang",
-        "unit": "Unit Pengolahan (CDU)",
+        "unit": "MOR II",
         "work_location": "Kilang Unit III",
         "phone": "081234567801",
         "email": "nanda@contoh.id",
@@ -81,6 +82,13 @@ def test_register_and_onboarding_flow(client):
     assert client.get("/api/me/onboarding").json()["status"]["mcu"] == "DONE"
     me = client.get("/api/auth/me").json()["user"]
     assert me["onboarding"]["completed"] is True
+
+
+def test_register_unit_must_be_mor_option(client):
+    client.cookies.clear()
+    for unit in ("", "Maintenance", "MOR VI"):
+        payload = {**NEW, "username": f"unit-{len(unit)}-{unit or 'empty'}", "employee_code": f"PTM-{3000 + len(unit)}", "unit": unit}
+        assert client.post("/api/auth/register", json=payload).status_code == 422
 
 
 def test_whatsapp_settings_queue_and_dispatch(client, login):

@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from .constants import VALID_UNITS
+
 
 import re as _re
 
@@ -35,6 +37,7 @@ class RegisterIn(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(min_length=3, max_length=128)
     employee_code: str = Field(min_length=3, max_length=32)
+    unit: str = Field(min_length=2, max_length=32)
     phone: str = Field(min_length=9, max_length=20)
     email: str | None = Field(default=None, max_length=128)
     consent: bool = False
@@ -72,6 +75,14 @@ class RegisterIn(BaseModel):
     def _ph(cls, v: str) -> str:
         return normalize_phone(v)
 
+    @field_validator("unit")
+    @classmethod
+    def _unit(cls, v: str) -> str:
+        v = v.strip()
+        if v not in VALID_UNITS:
+            raise ValueError(f"Unit harus salah satu dari: {', '.join(VALID_UNITS)}")
+        return v
+
     @field_validator("email")
     @classmethod
     def _em(cls, v: str | None) -> str | None:
@@ -106,6 +117,14 @@ class GeneralProfileIn(BaseModel):
     def _ph(cls, v: str) -> str:
         return normalize_phone(v)
 
+    @field_validator("unit")
+    @classmethod
+    def _unit(cls, v: str) -> str:
+        v = v.strip()
+        if v not in VALID_UNITS:
+            raise ValueError(f"Unit harus salah satu dari: {', '.join(VALID_UNITS)}")
+        return v
+
     @field_validator("email")
     @classmethod
     def _em(cls, v: str | None) -> str | None:
@@ -138,6 +157,13 @@ class WhatsAppTestIn(BaseModel):
     @classmethod
     def _to(cls, v: str) -> str:
         return normalize_phone(v)
+
+
+class CreateStaffIn(BaseModel):
+    username: str = Field(min_length=3, max_length=32)
+    password: str = Field(min_length=8, max_length=128)
+    full_name: str = Field(min_length=3, max_length=128)
+    role: Literal["HEALTH", "SECURITY"]
 
 
 class DemoLoginIn(BaseModel):

@@ -5,14 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrandLockup } from "@/components/brand";
-import { Alert, Button, Card, Checkbox, Field, Input } from "@/components/ui";
+import { Alert, Button, Card, Checkbox, Field, Input, Select } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { homeFor, useAuth } from "@/lib/auth";
+
+const UNIT_OPTIONS = ["MOR I", "MOR II", "MOR III", "MOR IV", "MOR V"] as const;
 
 export default function RegisterPage() {
   const { user, loading, register } = useAuth();
   const router = useRouter();
-  const [f, setF] = useState({ full_name: "", employee_code: "", username: "", phone: "", email: "", password: "", confirm: "" });
+  const [f, setF] = useState({ full_name: "", employee_code: "", username: "", unit: "", phone: "", email: "", password: "", confirm: "" });
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -21,12 +23,12 @@ export default function RegisterPage() {
     if (!loading && user) router.replace(homeFor(user));
   }, [loading, user, router]);
 
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const er: Record<string, string> = {};
-    for (const k of ["full_name", "employee_code", "username", "phone", "password"] as const) if (!f[k].trim()) er[k] = "Wajib diisi";
+    for (const k of ["full_name", "employee_code", "username", "unit", "phone", "password"] as const) if (!f[k].trim()) er[k] = "Wajib diisi";
     if (f.password && (f.password.length < 8 || !/[A-Za-z]/.test(f.password) || !/\d/.test(f.password)))
       er.password = "Minimal 8 karakter, memuat huruf dan angka";
     if (f.password !== f.confirm) er.confirm = "Konfirmasi password tidak sama";
@@ -40,6 +42,7 @@ export default function RegisterPage() {
         password: f.password,
         full_name: f.full_name,
         employee_code: f.employee_code,
+        unit: f.unit,
         phone: f.phone,
         email: f.email || null,
         consent,
@@ -71,6 +74,16 @@ export default function RegisterPage() {
               </Field>
               <Field label="Employee ID" required error={errors.employee_code} htmlFor="r-code" hint="Sesuai ID pekerja Anda">
                 <Input id="r-code" value={f.employee_code} onChange={set("employee_code")} placeholder="PTM-2xxx" maxLength={32} />
+              </Field>
+              <Field label="Unit" required error={errors.unit} htmlFor="r-unit">
+                <Select id="r-unit" value={f.unit} onChange={set("unit")}>
+                  <option value="">— Pilih Unit —</option>
+                  {UNIT_OPTIONS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </Select>
               </Field>
               <Field label="Username" required error={errors.username} htmlFor="r-user" hint="Huruf kecil, angka, titik, strip">
                 <Input id="r-user" value={f.username} onChange={set("username")} autoComplete="username" maxLength={32} />

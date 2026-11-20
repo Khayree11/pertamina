@@ -4,7 +4,7 @@
 
 ## Status kelayakan per area
 
-Setiap kartu pekerja memiliki status terpisah untuk empat area khusus: Dingin, Panas, Ketinggian, dan Area Terbatas Gas/BBM. Arti setiap status:
+Setiap kartu pekerja memiliki status terpisah untuk empat area khusus: Dingin, Panas, Ketinggian, dan Paparan BBM. Arti setiap status:
 
 - ALLOWED (Diizinkan): pekerja memenuhi syarat untuk area tersebut.
 - RESTRICTED (Terbatas): pekerja boleh masuk dengan pembatasan, misalnya durasi maksimal per entri dan wajib didampingi, sesuai restriksi dokter.

@@ -4,15 +4,16 @@ import { History, ScanLine } from "lucide-react";
 import Link from "next/link";
 import useSWR from "swr";
 import { AreaTile, VirtualCard } from "@/components/access";
-import { AREA_ICON, StatusBadge, StatusLegend, TapBadge } from "@/components/status";
+import { AREA_ICON, FitToDriveBadge, StatusBadge, StatusLegend, TapBadge } from "@/components/status";
 import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, PageHeader, PageLoader, Table, cn, td, th } from "@/components/ui";
 import { fmtDateTime, fmtTime } from "@/lib/format";
-import type { AccessEvent, AssessmentMeta, CardArea, EmployeeBasic, OverrideView } from "@/lib/types";
+import type { AccessEvent, AssessmentMeta, CardArea, EmployeeBasic, FitToDrive, OverrideView } from "@/lib/types";
 
 type CardData = {
   employee: EmployeeBasic;
   card: CardArea[];
   assessment: AssessmentMeta | null;
+  fit_to_drive?: FitToDrive | null;
   overrides: OverrideView[];
   access_events: AccessEvent[];
   disclaimer: string;
@@ -36,6 +37,7 @@ export default function KartuPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <VirtualCard employee={data.employee} card={data.card} />
         <div className="space-y-4">
+          {data.fit_to_drive && <FitToDriveBadge ftd={data.fit_to_drive} />}
           <Card>
             <CardBody className="space-y-2 text-sm">
               <div className="flex justify-between gap-3">

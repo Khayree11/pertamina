@@ -3,6 +3,19 @@ rule_versions (JSON) supaya bisa diubah tanpa deploy ulang."""
 
 ROLE_WORKER = "WORKER"
 ROLE_ADMIN = "ADMIN"
+ROLE_HEALTH = "HEALTH"
+ROLE_SECURITY = "SECURITY"
+
+ROLE_LABELS = {
+    ROLE_WORKER: "Pekerja",
+    ROLE_ADMIN: "Admin K3",
+    ROLE_HEALTH: "Petugas Kesehatan",
+    ROLE_SECURITY: "Petugas Keamanan",
+}
+
+STAFF_ROLES = [ROLE_ADMIN, ROLE_HEALTH, ROLE_SECURITY]
+
+VALID_UNITS = ["MOR I", "MOR II", "MOR III", "MOR IV", "MOR V"]
 
 # --- Area -----------------------------------------------------------------
 SPECIAL_AREAS = ["COLD", "HOT", "HEIGHT", "RESTRICTED_GAS"]
@@ -25,9 +38,9 @@ AREA_INFO = {
         "risk": "Risiko pingsan/jatuh, hipertensi tak terkontrol",
     },
     "RESTRICTED_GAS": {
-        "label": "Area Terbatas Gas/Uap BBM",
-        "short": "Gas/BBM",
-        "risk": "Beban respirasi, kondisi jantung, kondisi paru",
+        "label": "Area Paparan BBM",
+        "short": "Paparan BBM",
+        "risk": "Beban respirasi, paparan uap hidrokarbon, kondisi jantung, kondisi paru",
     },
     "GENERAL": {
         "label": "Akses Umum",
@@ -163,4 +176,40 @@ BP_SOURCES = {
     "SELF": "Input mandiri",
     "OFFICER": "Input petugas",
     "DEMO_SIM": "Simulasi demo",
+}
+
+# --- Status Kelayakan Berkendara (Fit to Drive / FTD) -------------------------
+FIT_TO_DRIVE = "FIT_TO_DRIVE"
+UNFIT_TO_DRIVE = "UNFIT_TO_DRIVE"
+
+FTD_STATUS_LABELS = {
+    FIT_TO_DRIVE: "Boleh Berkendara",
+    UNFIT_TO_DRIVE: "Dilarang Berkendara Hari Ini",
+}
+
+FTD_REASONS = {
+    "FTD_BP_NOT_SUBMITTED": {
+        "short": "Tensi hari ini belum diinput",
+        "detail": "Screening tensi harian wajib dilakukan sebelum berkendara kendaraan operasional.",
+    },
+    "FTD_BP_VERY_HIGH": {
+        "short": "Tensi sangat tinggi — tidak aman berkendara",
+        "detail": "Sistolik >= 180 atau diastolik >= 110 mmHg. Segera temui petugas kesehatan.",
+    },
+    "FTD_BP_HIGH": {
+        "short": "Tensi di atas ambang aman berkendara",
+        "detail": "Sistolik >= 140 atau diastolik >= 90 mmHg. Istirahat dan konsultasikan ke klinik.",
+    },
+    "FTD_MCU_UNFIT": {
+        "short": "Kesimpulan MCU tahunan: tidak fit",
+        "detail": "Dokter menyatakan tidak fit — termasuk tidak fit berkendara.",
+    },
+    "FTD_MCU_INVALID": {
+        "short": "MCU tahunan kedaluwarsa atau belum diverifikasi",
+        "detail": "MCU tidak berlaku — status berkendara tidak dapat dikonfirmasi.",
+    },
+    "FTD_EPILEPSY": {
+        "short": "Riwayat epilepsi/kejang aktif",
+        "detail": "Komorbid epilepsi aktif menghalangi izin berkendara kendaraan operasional.",
+    },
 }

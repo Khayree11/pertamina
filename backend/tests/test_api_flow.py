@@ -6,11 +6,12 @@ import pytest
 from sqlalchemy import select, text
 
 from app.db import SessionLocal, engine
+from app.config import get_settings
 from app.models import AccessOverride, CardAccess, Employee
 from app.services.scheduler import run_sweep
 from app.timeutil import utcnow
 
-DEVICE_KEY = "dev-device-key-change-me"
+DEVICE_KEY = get_settings().device_api_key
 
 
 def card_map(card):
@@ -21,6 +22,8 @@ def test_worker_without_bp_is_denied_then_allowed(client, login):
     login("budi")
     d = client.get("/api/me/dashboard").json()
     assert d["today"]["bp_submitted"] is False
+    assert d["fit_to_drive"]["status"] == "UNFIT_TO_DRIVE"
+    assert [r["code"] for r in d["fit_to_drive"]["reasons"]] == ["FTD_BP_NOT_SUBMITTED"]
     cm = card_map(d["card"])
     assert {c["status"] for c in cm.values()} == {"DENIED"}
     assert cm["HEIGHT"]["reasons"][0]["code"] == "BP_NOT_SUBMITTED"
@@ -33,6 +36,7 @@ def test_worker_without_bp_is_denied_then_allowed(client, login):
 
     r = client.post("/api/me/bp", json={"systolic": 120, "diastolic": 80, "pulse": 72})
     assert r.status_code == 200, r.text
+    assert r.json()["fit_to_drive"]["status"] == "FIT_TO_DRIVE"
     assert {c["status"] for c in r.json()["card"]} == {"ALLOWED"}
     tap = client.post("/api/acs/tap", json={"identifier": "CARD-0001001", "room_code": "HGT-01"}).json()
     assert tap["result"] == "GRANTED"

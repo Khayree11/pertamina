@@ -12,7 +12,7 @@ from ..models import AssessmentResult, AssessmentRun, Employee
 from ..rules.engine import evaluate
 from ..timeutil import end_of_local_day, today_local, utcnow
 from . import acs, card_access, notifications
-from .facts import build_facts
+from .facts import active_comorbidities, build_facts, evaluate_fit_to_drive
 from .reasons import get_active_rules
 
 
@@ -30,6 +30,10 @@ def run_assessment(
     facts, meta = build_facts(db, employee, config, now)
     result = evaluate(config, facts)
 
+    # Evaluasi status kelayakan berkendara (Fit to Drive / FTD)
+    comorbs = active_comorbidities(db, employee.id)
+    ftd = evaluate_fit_to_drive(facts, comorbs, config)
+
     # Tensi berlaku per hari kalender (WIB); dibatasi juga oleh masa berlaku MCU.
     valid_until = end_of_local_day(today_local(now))
     if meta.get("mcu_valid_through"):
@@ -46,7 +50,11 @@ def run_assessment(
         rule_version_id=rv.id,
         rule_version_label=f"v{rv.version} · {rv.label}",
         facts=facts,
-        meta=meta,
+        meta={
+            **meta,
+            "ftd_status": ftd["status"],
+            "ftd_reasons": ftd["reasons"],
+        },
         trace=result["trace"],
         flags=result["flags"],
         summary={a: r["status"] for a, r in result["areas"].items()},

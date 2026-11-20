@@ -12,8 +12,8 @@ import { fmtDate, fmtDateTime } from "@/lib/format";
 import type { Comorbidity } from "@/lib/types";
 
 const IMPACT = [
-  ["Penyakit jantung", "Panas, Ketinggian, Gas/BBM → perlu review"],
-  ["Asma / PPOK", "Gas/BBM → perlu review"],
+  ["Penyakit jantung", "Panas, Ketinggian, Paparan BBM → perlu review"],
+  ["Asma / PPOK", "Paparan BBM → perlu review"],
   ["Hipertensi / diabetes tidak terkontrol", "Ketinggian, Panas → perlu review"],
   ["Epilepsi / riwayat kejang", "Ketinggian → perlu review"],
   ["Lainnya (belum diklasifikasi)", "Semua area khusus → perlu review"],

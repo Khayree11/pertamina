@@ -33,6 +33,7 @@ from ..services.views import (
     card_view,
     comorbidity_view,
     employee_basic,
+    ftd_view,
     mcu_view,
     notification_view,
     override_view,
@@ -215,6 +216,7 @@ def dashboard(user: CurrentUser = Depends(require_worker), db: Session = Depends
         },
         "card": card_view(db, emp, config, "worker", now),
         "assessment": _assessment_meta(run),
+        "fit_to_drive": ftd_view(run),
         "mcu": mcu_view(mcu, config, names, now) if mcu else None,
         "comorbidities": [comorbidity_view(c, config) for c in comorbs],
         "notifications": [notification_view(n) for n in notifs],
@@ -285,6 +287,7 @@ def submit_bp(body: BPIn, user: CurrentUser = Depends(require_worker), db: Sessi
         "card": card_view(db, emp, config, "worker"),
         "changes": [{k: c.get(k) for k in ("area", "old_status", "new_status", "note")} for c in changes],
         "assessment": _assessment_meta(run),
+        "fit_to_drive": ftd_view(run),
     }
 
 
@@ -402,6 +405,7 @@ def card(user: CurrentUser = Depends(require_worker), db: Session = Depends(get_
         "employee": employee_basic(emp),
         "card": card_view(db, emp, config, "worker"),
         "assessment": _assessment_meta(run),
+        "fit_to_drive": ftd_view(run),
         "overrides": [override_view(o, names) for o in ovs],
         "access_events": [access_event_view(e) for e in events],
         "disclaimer": config.get("disclaimer"),

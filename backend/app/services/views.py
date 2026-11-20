@@ -11,6 +11,8 @@ from ..constants import (
     AREA_INFO,
     BP_SOURCES,
     DENIED,
+    FTD_REASONS,
+    FTD_STATUS_LABELS,
     GATE_MESSAGES,
     MCU_CONCLUSIONS,
     OVERRIDE_KINDS,
@@ -305,4 +307,27 @@ def audit_view(a: AuditLog) -> dict:
         "details": a.details,
         "hash": a.hash,
         "prev_hash": a.prev_hash,
+    }
+
+
+def ftd_view(run: AssessmentRun | None) -> dict | None:
+    """Serialisasi status Fit to Drive dari AssessmentRun."""
+    if run is None or not run.meta:
+        return None
+    status = run.meta.get("ftd_status")
+    reasons_codes = run.meta.get("ftd_reasons", [])
+    if not status:
+        return None
+    return {
+        "status": status,
+        "status_label": FTD_STATUS_LABELS.get(status, status),
+        "reasons": [
+            {
+                "code": code,
+                "short": FTD_REASONS.get(code, {}).get("short", code),
+                "detail": FTD_REASONS.get(code, {}).get("detail"),
+            }
+            for code in reasons_codes
+        ],
+        "assessed_at": iso(run.assessed_at) if run and run.assessed_at else None,
     }
